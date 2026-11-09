@@ -16,6 +16,7 @@ import { Address, CartItem, Order } from '@/types';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { SEED_PRODUCTS } from '@/data/seedProducts';
+import { PricingService } from './pricingService';
 
 // Declare window with Razorpay for Web platform
 declare global {
@@ -66,7 +67,7 @@ export class PaymentService {
     let subtotal = 0;
     for (const item of items) {
       const found = SEED_PRODUCTS.find((p) => p.id === item.product.id) || item.product;
-      const unitPrice = isDealer && found.dealerPrice ? found.dealerPrice : found.customerPrice;
+      const unitPrice = PricingService.getEffectiveUnitPrice(found, isDealer);
       subtotal += unitPrice * item.quantity;
     }
     const shippingFee = subtotal >= 999 ? 0 : 99;

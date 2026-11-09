@@ -1,6 +1,6 @@
 /**
- * AquaPure — 60 Authoritative Synchronized Catalog Products Dataset
- * Covers all 6 categories with authentic water purification specifications and dual customer/dealer pricing (INR).
+ * AquaPure — Authoritative Synchronized Catalog Products Dataset
+ * Covers all 5 categories with authentic water purification specifications and dual customer/dealer pricing (INR).
  */
 
 import { Product, ProductCategory } from '@/types';
@@ -14,45 +14,40 @@ export interface CategoryInfo {
 }
 
 export const CATEGORY_DEFINITIONS: Record<string, { name: string; icon: string; description: string }> = {
-  'water-purifiers': {
-    name: 'Water Purifiers',
+  'ro-water-purifiers': {
+    name: 'RO Water Purifiers',
     icon: '💧',
-    description: 'Advanced RO, UV, UF & Alkaline home & commercial systems',
+    description: 'Advanced domestic & commercial reverse osmosis systems',
   },
   'water-dispensers': {
     name: 'Water Dispensers',
     icon: '🚰',
     description: 'Hot, cold & ambient floor-standing and tabletop dispensers',
   },
-  'water-pumps': {
-    name: 'Water Pumps',
+  'booster-pumps': {
+    name: 'Booster Pumps',
     icon: '⚙️',
-    description: 'Booster pumps, feed pumps & pressure controllers',
+    description: 'High-performance RO booster pumps, feed pumps & controllers',
   },
-  'filters-cartridges': {
-    name: 'Filters & Cartridges',
+  'smps-power-units': {
+    name: 'SMPS Power Units',
+    icon: '⚡',
+    description: 'Switch-mode power supplies, adapters & surge protection units',
+  },
+  'water-treatment-accessories-filters': {
+    name: 'Water Treatment Accessories & Filters',
     icon: '🔬',
-    description: 'Sediment, carbon, alkaline, mineral cartridges & membranes',
-  },
-  'spare-parts-accessories': {
-    name: 'Spare Parts & Accessories',
-    icon: '🔧',
-    description: 'Taps, tanks, SMPS, fittings, UV lamps & leak protection kits',
-  },
-  'bottles-storage': {
-    name: 'Bottles & Storage',
-    icon: '🍶',
-    description: 'Stainless steel bottles, water cans, storage tanks & jugs',
+    description: 'Sediment, carbon filters, RO membranes, housings & fittings',
   },
 };
 
 export const CATEGORIES: CategoryInfo[] = [
   {
-    id: 'water-purifiers',
-    name: 'Water Purifiers',
-    description: 'Advanced RO, UV, UF & Alkaline home & commercial systems',
+    id: 'ro-water-purifiers',
+    name: 'RO Water Purifiers',
+    description: 'Advanced domestic & commercial reverse osmosis systems',
     icon: '💧',
-    itemCount: 12,
+    itemCount: 13,
   },
   {
     id: 'water-dispensers',
@@ -62,33 +57,26 @@ export const CATEGORIES: CategoryInfo[] = [
     itemCount: 10,
   },
   {
-    id: 'water-pumps',
-    name: 'Water Pumps',
-    description: 'Booster pumps, feed pumps & pressure controllers',
+    id: 'booster-pumps',
+    name: 'Booster Pumps',
+    description: 'High-performance RO booster pumps, feed pumps & controllers',
     icon: '⚙️',
     itemCount: 8,
   },
   {
-    id: 'filters-cartridges',
-    name: 'Filters & Cartridges',
-    description: 'Sediment, carbon, alkaline, mineral cartridges & membranes',
+    id: 'smps-power-units',
+    name: 'SMPS Power Units',
+    description: 'Switch-mode power supplies, adapters & surge protection units',
+    icon: '⚡',
+    itemCount: 1,
+  },
+  {
+    id: 'water-treatment-accessories-filters',
+    name: 'Water Treatment Accessories & Filters',
+    description: 'Sediment, carbon filters, RO membranes, housings & fittings',
     icon: '🔬',
-    itemCount: 12,
+    itemCount: 29,
   },
-  {
-    id: 'spare-parts-accessories',
-    name: 'Spare Parts & Accessories',
-    description: 'Taps, tanks, SMPS, fittings, UV lamps & leak protection kits',
-    icon: '🔧',
-    itemCount: 10,
-  },
-  {
-    id: 'bottles-storage',
-    name: 'Bottles & Storage',
-    description: 'Stainless steel bottles, water cans, storage tanks & jugs',
-    icon: '🍶',
-    itemCount: 8,
-  }
 ];
 
 /**
@@ -97,7 +85,6 @@ export const CATEGORIES: CategoryInfo[] = [
 export function generateCategories(products: Product[]): CategoryInfo[] {
   const categoryMap = new Map<string, CategoryInfo>();
 
-  // Initialize with all standard categories so order is preserved
   for (const [id, def] of Object.entries(CATEGORY_DEFINITIONS)) {
     categoryMap.set(id, {
       id: id as ProductCategory,
@@ -110,21 +97,29 @@ export function generateCategories(products: Product[]): CategoryInfo[] {
 
   for (const prod of products) {
     if (!prod.active) continue;
-    const catId = prod.categoryId;
+    let catId = prod.categoryId;
+    if (catId === 'water-purifiers' || catId === 'purifiers') catId = 'ro-water-purifiers';
+    else if (catId === 'water-pumps' || catId === 'pumps') catId = 'booster-pumps';
+    else if (catId === 'dispensers') catId = 'water-dispensers';
+    else if (
+      catId === 'filters-cartridges' ||
+      catId === 'spare-parts-accessories' ||
+      catId === 'bottles-storage' ||
+      catId === 'filters' ||
+      catId === 'spare-parts' ||
+      catId === 'membranes'
+    ) {
+      catId = (prod.name.includes('SMPS') || (prod.category && prod.category.includes('SMPS')))
+        ? 'smps-power-units'
+        : 'water-treatment-accessories-filters';
+    }
+
     if (categoryMap.has(catId)) {
       categoryMap.get(catId)!.itemCount += 1;
-    } else {
-      categoryMap.set(catId, {
-        id: catId as ProductCategory,
-        name: prod.category || catId,
-        description: `${prod.category || catId} items`,
-        icon: '💧',
-        itemCount: 1,
-      });
     }
   }
 
-  return Array.from(categoryMap.values()).filter(c => c.itemCount > 0);
+  return Array.from(categoryMap.values()).filter((c) => c.itemCount > 0);
 }
 
 export const SEED_PRODUCTS: Product[] = [
@@ -132,8 +127,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-WP-001",
     "name": "AquaPure Grand RO+UV+UF+Alkaline",
     "slug": "aquapure-grand-ro-uv-uf-alkaline",
-    "category": "Water Purifiers",
-    "categoryId": "water-purifiers",
+    "category": "RO Water Purifiers",
+    "categoryId": "ro-water-purifiers",
     "description": "Flagship 10-stage purification system with alkaline mineralizer and copper infusion for pure, electrolyte-balanced water.",
     "price": 14999,
     "customerPrice": 14999,
@@ -172,6 +167,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Grand RO+UV+UF+Alkaline product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -179,8 +175,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-WP-002",
     "name": "AquaPure Slim Copper RO+UV",
     "slug": "aquapure-slim-copper-ro-uv",
-    "category": "Water Purifiers",
-    "categoryId": "water-purifiers",
+    "category": "RO Water Purifiers",
+    "categoryId": "ro-water-purifiers",
     "description": "Space-saving slim wall-mounted purifier with active copper enrichment and UV sterilization.",
     "price": 12499,
     "customerPrice": 12499,
@@ -219,6 +215,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Slim Copper RO+UV product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -226,8 +223,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-WP-003",
     "name": "AquaPure Crystal RO+UV",
     "slug": "aquapure-crystal-ro-uv",
-    "category": "Water Purifiers",
-    "categoryId": "water-purifiers",
+    "category": "RO Water Purifiers",
+    "categoryId": "ro-water-purifiers",
     "description": "Reliable dual RO and UV system equipped with multi-stage pre-filters for sediment and chlorine removal.",
     "price": 10999,
     "customerPrice": 10999,
@@ -266,6 +263,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Crystal RO+UV product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -273,8 +271,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-WP-004",
     "name": "AquaPure Alkaline Pro",
     "slug": "aquapure-alkaline-pro",
-    "category": "Water Purifiers",
-    "categoryId": "water-purifiers",
+    "category": "RO Water Purifiers",
+    "categoryId": "ro-water-purifiers",
     "description": "Advanced alkaline pH booster and antioxidant water purifier for optimal hydration and wellness.",
     "price": 13999,
     "customerPrice": 13999,
@@ -309,6 +307,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Alkaline Pro product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -316,8 +315,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-WP-005",
     "name": "AquaPure Mineral Max",
     "slug": "aquapure-mineral-max",
-    "category": "Water Purifiers",
-    "categoryId": "water-purifiers",
+    "category": "RO Water Purifiers",
+    "categoryId": "ro-water-purifiers",
     "description": "Equipped with active mineral addition cartridge ensuring essential calcium and magnesium in drinking water.",
     "price": 11999,
     "customerPrice": 11999,
@@ -352,6 +351,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Mineral Max product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -359,8 +359,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-WP-006",
     "name": "AquaPure UV Shield",
     "slug": "aquapure-uv-shield",
-    "category": "Water Purifiers",
-    "categoryId": "water-purifiers",
+    "category": "RO Water Purifiers",
+    "categoryId": "ro-water-purifiers",
     "description": "Energy-efficient ultraviolet system for municipal and low-TDS water sources, eliminating 99.99% bacteria & viruses.",
     "price": 8999,
     "customerPrice": 8999,
@@ -395,6 +395,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure UV Shield product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -402,8 +403,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-WP-007",
     "name": "AquaPure Compact RO",
     "slug": "aquapure-compact-ro",
-    "category": "Water Purifiers",
-    "categoryId": "water-purifiers",
+    "category": "RO Water Purifiers",
+    "categoryId": "ro-water-purifiers",
     "description": "Compact kitchen RO purifier designed specifically for studio apartments and modern compact countertops.",
     "price": 7999,
     "customerPrice": 7999,
@@ -438,6 +439,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Compact RO product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -445,8 +447,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-WP-008",
     "name": "AquaPure Smart Touch RO",
     "slug": "aquapure-smart-touch-ro",
-    "category": "Water Purifiers",
-    "categoryId": "water-purifiers",
+    "category": "RO Water Purifiers",
+    "categoryId": "ro-water-purifiers",
     "description": "Smart touch-screen water purifier featuring filter life monitoring, digital TDS display, and one-touch dispense.",
     "price": 15999,
     "customerPrice": 15999,
@@ -481,6 +483,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Smart Touch RO product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -488,8 +491,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-WP-009",
     "name": "AquaPure Stainless Steel RO",
     "slug": "aquapure-stainless-steel-ro",
-    "category": "Water Purifiers",
-    "categoryId": "water-purifiers",
+    "category": "RO Water Purifiers",
+    "categoryId": "ro-water-purifiers",
     "description": "Premium 304 food-grade stainless steel storage tank and casing for plastic-free, toxin-free water storage.",
     "price": 16999,
     "customerPrice": 16999,
@@ -524,6 +527,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Stainless Steel RO product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -531,8 +535,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-WP-010",
     "name": "AquaPure Under-Sink RO",
     "slug": "aquapure-under-sink-ro",
-    "category": "Water Purifiers",
-    "categoryId": "water-purifiers",
+    "category": "RO Water Purifiers",
+    "categoryId": "ro-water-purifiers",
     "description": "Concealed under-sink reverse osmosis system with sleek chrome deck faucet and pressurized expansion tank.",
     "price": 14499,
     "customerPrice": 14499,
@@ -567,6 +571,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Under-Sink RO product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -574,8 +579,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-WP-011",
     "name": "AquaPure Basic UF",
     "slug": "aquapure-basic-uf",
-    "category": "Water Purifiers",
-    "categoryId": "water-purifiers",
+    "category": "RO Water Purifiers",
+    "categoryId": "ro-water-purifiers",
     "description": "Zero-electricity gravity-based ultra-filtration purifier for municipal supply water and rural use.",
     "price": 5999,
     "customerPrice": 5999,
@@ -610,6 +615,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Basic UF product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -617,8 +623,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-WP-012",
     "name": "AquaPure Commercial RO 25 LPH",
     "slug": "aquapure-commercial-ro-25-lph",
-    "category": "Water Purifiers",
-    "categoryId": "water-purifiers",
+    "category": "RO Water Purifiers",
+    "categoryId": "ro-water-purifiers",
     "description": "Heavy-duty 25 LPH commercial water purifier designed for clinics, offices, cafes, and small factories.",
     "price": 28999,
     "customerPrice": 28999,
@@ -653,6 +659,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Commercial RO 25 LPH product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -696,6 +703,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Hot & Cold Floor Dispenser product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -739,6 +747,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Bottom Loading Dispenser product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -782,6 +791,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Tabletop Water Dispenser product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -825,6 +835,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Electric Can Pump Dispenser product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -868,6 +879,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Manual Press Can Pump Dispenser product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -907,6 +919,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Stainless Steel Water Dispenser product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -946,6 +959,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Office Water Cooler product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -989,6 +1003,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Compact Mini Dispenser product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1032,6 +1047,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Child-Safe Hot Water Dispenser product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1071,6 +1087,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Rechargeable Bottle Dispenser product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1078,8 +1095,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-PM-023",
     "name": "AquaPure Booster Pump 0.5 HP",
     "slug": "aquapure-booster-pump-0-5-hp",
-    "category": "Water Pumps",
-    "categoryId": "water-pumps",
+    "category": "Booster Pumps",
+    "categoryId": "booster-pumps",
     "description": "Domestic water pressure booster pump 0.5 HP for increasing tap flow rate to bathrooms and purifiers.",
     "price": 2499,
     "customerPrice": 2499,
@@ -1114,6 +1131,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Booster Pump 0.5 HP product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1121,8 +1139,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-PM-024",
     "name": "AquaPure Booster Pump 1 HP",
     "slug": "aquapure-booster-pump-1-hp",
-    "category": "Water Pumps",
-    "categoryId": "water-pumps",
+    "category": "Booster Pumps",
+    "categoryId": "booster-pumps",
     "description": "Heavy duty 1 HP booster pump providing high water head pressure for multi-storey residential applications.",
     "price": 3999,
     "customerPrice": 3999,
@@ -1157,6 +1175,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Booster Pump 1 HP product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1164,8 +1183,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-PM-025",
     "name": "AquaPure RO Feed Pump 75 GPD",
     "slug": "aquapure-ro-feed-pump-75-gpd",
-    "category": "Water Pumps",
-    "categoryId": "water-pumps",
+    "category": "Booster Pumps",
+    "categoryId": "booster-pumps",
     "description": "Standard 75 GPD 24V DC booster diaphragm pump for domestic reverse osmosis water purification systems.",
     "price": 1299,
     "customerPrice": 1299,
@@ -1200,6 +1219,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure RO Feed Pump 75 GPD product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1207,8 +1227,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-PM-026",
     "name": "AquaPure RO Feed Pump 100 GPD",
     "slug": "aquapure-ro-feed-pump-100-gpd",
-    "category": "Water Pumps",
-    "categoryId": "water-pumps",
+    "category": "Booster Pumps",
+    "categoryId": "booster-pumps",
     "description": "High-output 100 GPD 24V/36V DC RO feed pump engineered for high-recovery domestic RO systems.",
     "price": 1599,
     "customerPrice": 1599,
@@ -1243,6 +1263,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure RO Feed Pump 100 GPD product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1250,8 +1271,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-PM-027",
     "name": "AquaPure Self-Priming Water Pump",
     "slug": "aquapure-self-priming-water-pump",
-    "category": "Water Pumps",
-    "categoryId": "water-pumps",
+    "category": "Booster Pumps",
+    "categoryId": "booster-pumps",
     "description": "Self-priming domestic centrifugal water pump capable of lifting water from shallow wells and underground sumps.",
     "price": 1899,
     "customerPrice": 1899,
@@ -1286,6 +1307,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Self-Priming Water Pump product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1293,8 +1315,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-PM-028",
     "name": "AquaPure Mini Booster Pump",
     "slug": "aquapure-mini-booster-pump",
-    "category": "Water Pumps",
-    "categoryId": "water-pumps",
+    "category": "Booster Pumps",
+    "categoryId": "booster-pumps",
     "description": "Ultra-quiet 12V/24V mini inline booster pump for low water pressure taps, geysers, and compact purifiers.",
     "price": 999,
     "customerPrice": 999,
@@ -1329,6 +1351,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Mini Booster Pump product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1336,8 +1359,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-PM-029",
     "name": "AquaPure Pressure Pump Controller",
     "slug": "aquapure-pressure-pump-controller",
-    "category": "Water Pumps",
-    "categoryId": "water-pumps",
+    "category": "Booster Pumps",
+    "categoryId": "booster-pumps",
     "description": "Automatic digital pressure pump controller with dry-run protection and auto restart feature.",
     "price": 799,
     "customerPrice": 799,
@@ -1372,6 +1395,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Pressure Pump Controller product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1379,8 +1403,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-PM-030",
     "name": "AquaPure Commercial RO Pump",
     "slug": "aquapure-commercial-ro-pump",
-    "category": "Water Pumps",
-    "categoryId": "water-pumps",
+    "category": "Booster Pumps",
+    "categoryId": "booster-pumps",
     "description": "Industrial vertical high-pressure multistage pump for 250 to 1000 LPH commercial and industrial RO plants.",
     "price": 4999,
     "customerPrice": 4999,
@@ -1415,6 +1439,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Commercial RO Pump product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1422,8 +1447,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-FC-031",
     "name": "AquaPure Sediment Filter 5 Micron",
     "slug": "aquapure-sediment-filter-5-micron",
-    "category": "Filters & Cartridges",
-    "categoryId": "filters-cartridges",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "High dirt-holding polypropylene melt-blown 5-micron sediment filter for pre-filtration stage.",
     "price": 299,
     "customerPrice": 299,
@@ -1458,6 +1483,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Sediment Filter 5 Micron product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1465,8 +1491,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-FC-032",
     "name": "AquaPure Sediment Filter 1 Micron",
     "slug": "aquapure-sediment-filter-1-micron",
-    "category": "Filters & Cartridges",
-    "categoryId": "filters-cartridges",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Fine 1-micron spun sediment filter for trapping micro-particulates, rust flakes, and fine silt.",
     "price": 349,
     "customerPrice": 349,
@@ -1501,6 +1527,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Sediment Filter 1 Micron product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1508,8 +1535,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-FC-033",
     "name": "AquaPure Activated Carbon Filter",
     "slug": "aquapure-activated-carbon-filter",
-    "category": "Filters & Cartridges",
-    "categoryId": "filters-cartridges",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Premium coconut shell activated carbon filter cartridge for absorbing chlorine, volatile organic compounds, and odors.",
     "price": 399,
     "customerPrice": 399,
@@ -1544,6 +1571,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Activated Carbon Filter product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1551,8 +1579,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-FC-034",
     "name": "AquaPure Carbon Block CTO Filter",
     "slug": "aquapure-carbon-block-cto-filter",
-    "category": "Filters & Cartridges",
-    "categoryId": "filters-cartridges",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Solid extruded carbon block CTO filter for deep chlorine adsorption and taste refinement.",
     "price": 449,
     "customerPrice": 449,
@@ -1587,6 +1615,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Carbon Block CTO Filter product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1594,8 +1623,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-FC-035",
     "name": "AquaPure GAC Filter Cartridge",
     "slug": "aquapure-gac-filter-cartridge",
-    "category": "Filters & Cartridges",
-    "categoryId": "filters-cartridges",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Granular Activated Carbon (GAC) cartridge with internal expansion pad preventing channeling of water.",
     "price": 399,
     "customerPrice": 399,
@@ -1630,6 +1659,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure GAC Filter Cartridge product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1637,8 +1667,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-FC-036",
     "name": "AquaPure RO Membrane 75 GPD",
     "slug": "aquapure-ro-membrane-75-gpd",
-    "category": "Filters & Cartridges",
-    "categoryId": "filters-cartridges",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "High-rejection thin film composite (TFC) RO membrane element producing up to 75 gallons per day.",
     "price": 999,
     "customerPrice": 999,
@@ -1673,6 +1703,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure RO Membrane 75 GPD product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1680,8 +1711,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-FC-037",
     "name": "AquaPure RO Membrane 100 GPD",
     "slug": "aquapure-ro-membrane-100-gpd",
-    "category": "Filters & Cartridges",
-    "categoryId": "filters-cartridges",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Heavy-duty 100 GPD thin film membrane for fast flow and high recovery across high TDS borewell supplies.",
     "price": 1299,
     "customerPrice": 1299,
@@ -1716,6 +1747,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure RO Membrane 100 GPD product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1723,8 +1755,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-FC-038",
     "name": "AquaPure Post Carbon Filter",
     "slug": "aquapure-post-carbon-filter",
-    "category": "Filters & Cartridges",
-    "categoryId": "filters-cartridges",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Polishing post carbon inline filter cartridge delivering crisp, natural spring water taste.",
     "price": 349,
     "customerPrice": 349,
@@ -1759,6 +1791,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Post Carbon Filter product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1766,8 +1799,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-FC-039",
     "name": "AquaPure Mineral Cartridge",
     "slug": "aquapure-mineral-cartridge",
-    "category": "Filters & Cartridges",
-    "categoryId": "filters-cartridges",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Post-RO mineralizer cartridge restoring balanced calcium, magnesium, sodium, and potassium trace minerals.",
     "price": 499,
     "customerPrice": 499,
@@ -1802,6 +1835,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Mineral Cartridge product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1809,8 +1843,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-FC-040",
     "name": "AquaPure Alkaline Cartridge",
     "slug": "aquapure-alkaline-cartridge",
-    "category": "Filters & Cartridges",
-    "categoryId": "filters-cartridges",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Alkaline mineralizer filter balancing water pH to 8.0 - 8.5 with negative ORP antioxidant properties.",
     "price": 599,
     "customerPrice": 599,
@@ -1845,6 +1879,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Alkaline Cartridge product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1852,8 +1887,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-FC-041",
     "name": "AquaPure Copper Infusion Cartridge",
     "slug": "aquapure-copper-infusion-cartridge",
-    "category": "Filters & Cartridges",
-    "categoryId": "filters-cartridges",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Pure copper mineral infusion cartridge releasing ionic copper trace minerals for Ayurvedic wellness benefits.",
     "price": 699,
     "customerPrice": 699,
@@ -1888,6 +1923,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Copper Infusion Cartridge product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1895,8 +1931,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-FC-042",
     "name": "AquaPure UF Membrane Cartridge",
     "slug": "aquapure-uf-membrane-cartridge",
-    "category": "Filters & Cartridges",
-    "categoryId": "filters-cartridges",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Ultra-filtration hollow-fiber membrane cartridge with 0.01 micron pore size blocking 99.99% bacteria & cysts.",
     "price": 599,
     "customerPrice": 599,
@@ -1931,6 +1967,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure UF Membrane Cartridge product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1938,8 +1975,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-SP-043",
     "name": "AquaPure Chrome RO Faucet",
     "slug": "aquapure-chrome-ro-faucet",
-    "category": "Spare Parts & Accessories",
-    "categoryId": "spare-parts-accessories",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Solid brass lead-free gooseneck RO faucet with lustrous triple-plated chrome finish and ceramic disc valve.",
     "price": 499,
     "customerPrice": 499,
@@ -1974,6 +2011,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Chrome RO Faucet product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -1981,8 +2019,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-SP-044",
     "name": "AquaPure Filter Housing 10 Inch",
     "slug": "aquapure-filter-housing-10-inch",
-    "category": "Spare Parts & Accessories",
-    "categoryId": "spare-parts-accessories",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Heavy-duty 10-inch pre-filter bowl housing with reinforced ribbed cap and leak-proof double O-ring seal.",
     "price": 399,
     "customerPrice": 399,
@@ -2017,6 +2055,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Filter Housing 10 Inch product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2024,8 +2063,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-SP-045",
     "name": "AquaPure RO Storage Tank",
     "slug": "aquapure-ro-storage-tank",
-    "category": "Spare Parts & Accessories",
-    "categoryId": "spare-parts-accessories",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Food-grade pressurized bladder storage tank for under-counter and cabinet reverse osmosis systems.",
     "price": 1499,
     "customerPrice": 1499,
@@ -2060,6 +2099,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure RO Storage Tank product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2067,8 +2107,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-SP-046",
     "name": "AquaPure Food-Grade RO Tubing",
     "slug": "aquapure-food-grade-ro-tubing",
-    "category": "Spare Parts & Accessories",
-    "categoryId": "spare-parts-accessories",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "NSF-certified 1/4\" food-grade flexible LLDPE tubing roll for all domestic and commercial water purifiers.",
     "price": 199,
     "customerPrice": 199,
@@ -2103,6 +2143,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Food-Grade RO Tubing product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2110,8 +2151,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-SP-047",
     "name": "AquaPure Quick Connect Fittings Kit",
     "slug": "aquapure-quick-connect-fittings-kit",
-    "category": "Spare Parts & Accessories",
-    "categoryId": "spare-parts-accessories",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Comprehensive 20-piece kit containing elbows, tees, straight unions, check valves, and bulkhead fittings.",
     "price": 299,
     "customerPrice": 299,
@@ -2146,6 +2187,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Quick Connect Fittings Kit product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2153,8 +2195,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-SP-048",
     "name": "AquaPure UV Lamp Replacement",
     "slug": "aquapure-uv-lamp-replacement",
-    "category": "Spare Parts & Accessories",
-    "categoryId": "spare-parts-accessories",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "High-output 11W 4-pin germicidal ultraviolet lamp replacement for in-tank and inline UV chambers.",
     "price": 799,
     "customerPrice": 799,
@@ -2189,6 +2231,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure UV Lamp Replacement product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2196,8 +2239,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-SP-049",
     "name": "AquaPure SMPS Power Adapter",
     "slug": "aquapure-smps-power-adapter",
-    "category": "Spare Parts & Accessories",
-    "categoryId": "spare-parts-accessories",
+    "category": "SMPS Power Units",
+    "categoryId": "smps-power-units",
     "description": "Short-circuit and surge protected 24V 2.5A SMPS switch mode power supply adapter for RO booster pumps.",
     "price": 699,
     "customerPrice": 699,
@@ -2232,6 +2275,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure SMPS Power Adapter product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2239,8 +2283,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-SP-050",
     "name": "AquaPure Digital TDS Meter",
     "slug": "aquapure-digital-tds-meter",
-    "category": "Spare Parts & Accessories",
-    "categoryId": "spare-parts-accessories",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Pocket digital TDS meter with auto temperature compensation (ATC) and backlit LCD readout for testing purity.",
     "price": 399,
     "customerPrice": 399,
@@ -2275,6 +2319,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Digital TDS Meter product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2282,8 +2327,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-SP-051",
     "name": "AquaPure Float Valve Assembly",
     "slug": "aquapure-float-valve-assembly",
-    "category": "Spare Parts & Accessories",
-    "categoryId": "spare-parts-accessories",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Micro-switch float valve assembly for automatic pump shutoff when water storage tank reaches full capacity.",
     "price": 249,
     "customerPrice": 249,
@@ -2318,6 +2363,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Float Valve Assembly product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2325,8 +2371,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-SP-052",
     "name": "AquaPure Leak Protection Kit",
     "slug": "aquapure-leak-protection-kit",
-    "category": "Spare Parts & Accessories",
-    "categoryId": "spare-parts-accessories",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Automated mechanical leak detector shutoff valve that interrupts feed water supply in event of moisture detection.",
     "price": 899,
     "customerPrice": 899,
@@ -2361,6 +2407,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Leak Protection Kit product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2368,8 +2415,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-BS-053",
     "name": "AquaPure Stainless Steel Bottle 750 ml",
     "slug": "aquapure-stainless-steel-bottle-750-ml",
-    "category": "Bottles & Storage",
-    "categoryId": "bottles-storage",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Ergonomic 750 ml single-wall 304 stainless steel bottle for everyday hydration, leakproof twist cap.",
     "price": 499,
     "customerPrice": 499,
@@ -2404,6 +2451,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Stainless Steel Bottle 750 ml product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2411,8 +2459,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-BS-054",
     "name": "AquaPure Insulated Bottle 1 Litre",
     "slug": "aquapure-insulated-bottle-1-litre",
-    "category": "Bottles & Storage",
-    "categoryId": "bottles-storage",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Double-wall vacuum insulated 1000 ml thermo flask keeping beverages cold for 24 hours or hot for 12 hours.",
     "price": 799,
     "customerPrice": 799,
@@ -2447,6 +2495,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Insulated Bottle 1 Litre product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2454,8 +2503,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-BS-055",
     "name": "AquaPure Reusable Sports Bottle",
     "slug": "aquapure-reusable-sports-bottle",
-    "category": "Bottles & Storage",
-    "categoryId": "bottles-storage",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Shatter-proof reusable sports gym bottle with one-click flip top lid, motivational time markers, and straw.",
     "price": 299,
     "customerPrice": 299,
@@ -2490,6 +2539,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Reusable Sports Bottle product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2497,8 +2547,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-BS-056",
     "name": "AquaPure Water Can 10 Litre",
     "slug": "aquapure-water-can-10-litre",
-    "category": "Bottles & Storage",
-    "categoryId": "bottles-storage",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Portable 10-litre water storage container with ergonomic carry handle and built-in screw-on pour tap.",
     "price": 399,
     "customerPrice": 399,
@@ -2533,6 +2583,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Water Can 10 Litre product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2540,8 +2591,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-BS-057",
     "name": "AquaPure Water Can 20 Litre",
     "slug": "aquapure-water-can-20-litre",
-    "category": "Bottles & Storage",
-    "categoryId": "bottles-storage",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Heavy-duty 20-litre transparent blue polycarbonate water jar with crown neck, compatible with all dispensers.",
     "price": 599,
     "customerPrice": 599,
@@ -2576,6 +2627,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Water Can 20 Litre product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2583,8 +2635,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-BS-058",
     "name": "AquaPure Dispenser Bottle 20 Litre",
     "slug": "aquapure-dispenser-bottle-20-litre",
-    "category": "Bottles & Storage",
-    "categoryId": "bottles-storage",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "20-litre dispenser bottle equipped with pre-fitted fast-flow push tap for direct countertop dispensing.",
     "price": 699,
     "customerPrice": 699,
@@ -2619,6 +2671,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Dispenser Bottle 20 Litre product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2626,8 +2679,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-BS-059",
     "name": "AquaPure RO Storage Tank 8 Litre",
     "slug": "aquapure-ro-storage-tank-8-litre",
-    "category": "Bottles & Storage",
-    "categoryId": "bottles-storage",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Compact 8-litre pressurized hydro-pneumatic storage tank for tight under-sink RO purifier installations.",
     "price": 1799,
     "customerPrice": 1799,
@@ -2662,6 +2715,7 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure RO Storage Tank 8 Litre product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
   },
@@ -2669,8 +2723,8 @@ export const SEED_PRODUCTS: Product[] = [
     "id": "AP-BS-060",
     "name": "AquaPure Water Jug with Tap",
     "slug": "aquapure-water-jug-with-tap",
-    "category": "Bottles & Storage",
-    "categoryId": "bottles-storage",
+    "category": "Water Treatment Accessories & Filters",
+    "categoryId": "water-treatment-accessories-filters",
     "description": "Tabletop insulated water jug with push-button tap, wide opening for ice cubes, and fold-down handle.",
     "price": 449,
     "customerPrice": 449,
@@ -2705,7 +2759,56 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     "active": true,
     "imageSearchQuery": "AquaPure Water Jug with Tap product photo white background",
+    "imageNote": "Add a verified, matching product image URL before publishing. Prices are illustrative demo values; verify before use.",
     "createdAt": "2026-01-10T00:00:00Z",
     "updatedAt": "2026-01-10T00:00:00Z"
+  },
+  {
+    "id": "AP-WP-061",
+    "name": "Aqua Touch",
+    "slug": "aqua-touch",
+    "category": "RO Water Purifiers",
+    "categoryId": "ro-water-purifiers",
+    "description": "Pure & Safe Water with Smart Touch Controls. Advanced multi-stage filtration for crystal clear, mineral-rich, healthy drinking water.",
+    "price": 15999,
+    "customerPrice": 15999,
+    "dealerPrice": 9500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/water-shell.firebasestorage.app/o/products%2Faqua-touch.jpg?alt=media",
+    "gallery": [
+      "https://firebasestorage.googleapis.com/v0/b/water-shell.firebasestorage.app/o/products%2Faqua-touch.jpg?alt=media"
+    ],
+    "stock": 25,
+    "stockStatus": "in_stock",
+    "specifications": [
+      {
+        "label": "Purification Technology",
+        "value": "RO + UV + UF + TDS Control"
+      },
+      {
+        "label": "Controls",
+        "value": "Smart Touch Controls"
+      },
+      {
+        "label": "Water Quality",
+        "value": "Crystal Clear Water"
+      },
+      {
+        "label": "Mineral Enrichment",
+        "value": "Mineral Rich Water"
+      },
+      {
+        "label": "Stock Status",
+        "value": "In Stock"
+      },
+      {
+        "label": "Warranty",
+        "value": "1 Year Service Warranty"
+      }
+    ],
+    "active": true,
+    "imageSearchQuery": "Water Shell Aqua Touch RO Water Purifier Smart Touch Controls",
+    "imageNote": "Official Aqua Touch product photo",
+    "createdAt": "2026-10-30T00:00:00Z",
+    "updatedAt": "2026-10-30T00:00:00Z"
   }
 ];

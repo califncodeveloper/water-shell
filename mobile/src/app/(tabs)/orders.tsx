@@ -277,7 +277,7 @@ export default function OrdersScreen() {
     });
   };
 
-  const headerBg = isDark ? '#140A20' : colors.primary;
+  const headerBg = colors.headerBackground;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: headerBg }]} edges={['top']}>
@@ -295,8 +295,8 @@ export default function OrdersScreen() {
               accessibilityLabel="Sign In"
               accessibilityRole="button"
             >
-              <Ionicons name="log-in-outline" size={14} color="#210440" />
-              <Text style={[styles.signInBadgeText, { color: '#210440' }]}>Sign In</Text>
+              <Ionicons name="log-in-outline" size={14} color="#1B1F5E" />
+              <Text style={[styles.signInBadgeText, { color: '#1B1F5E' }]}>Sign In</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -594,10 +594,10 @@ export default function OrdersScreen() {
                         accessibilityRole="button"
                       >
                         {isBuying ? (
-                          <ActivityIndicator size="small" color="#210440" />
+                          <ActivityIndicator size="small" color="#1B1F5E" />
                         ) : (
                           <>
-                            <Ionicons name="refresh-outline" size={15} color="#210440" />
+                            <Ionicons name="refresh-outline" size={15} color="#1B1F5E" />
                             <Text style={styles.buyAgainBtnText}>Buy Again</Text>
                           </>
                         )}
@@ -618,10 +618,10 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: isDark ? '#140A20' : colors.primary,
+      backgroundColor: colors.headerBackground,
     },
     header: {
-      backgroundColor: isDark ? '#140A20' : colors.primary,
+      backgroundColor: colors.headerBackground,
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.sm,
       paddingBottom: spacing.md,
@@ -653,7 +653,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
     signInBadgeText: {
       ...typography.labelSmall,
-      color: '#210440',
+      color: '#1B1F5E',
       fontWeight: '700',
       fontSize: 12,
     },
@@ -687,7 +687,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       fontWeight: '600',
     },
     filterTabTextActive: {
-      color: '#210440',
+      color: '#1B1F5E',
       fontWeight: '800',
     },
     countBadge: {
@@ -700,7 +700,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       paddingHorizontal: 4,
     },
     countBadgeActive: {
-      backgroundColor: '#210440',
+      backgroundColor: '#1B1F5E',
     },
     countBadgeText: {
       ...typography.labelSmall,
@@ -1033,7 +1033,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
     buyAgainBtnText: {
       ...typography.labelSmall,
-      color: '#210440',
+      color: '#1B1F5E',
       fontWeight: '800',
       fontSize: 12,
     },

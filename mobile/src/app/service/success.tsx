@@ -21,13 +21,15 @@ import { doc, getDoc } from 'firebase/firestore';
 export default function ServiceSuccessScreen() {
   const { colors, isDark } = useTheme();
   const styles = useThemedStyles(getStyles);
-  const { bookingId, serviceTitle, date, time } = useLocalSearchParams<{
+  const { bookingId, serviceTitle, date, time, deliveryZone } = useLocalSearchParams<{
     bookingId: string;
     serviceTitle: string;
     date: string;
     time: string;
+    deliveryZone?: string;
   }>();
   const [bookingStatus, setBookingStatus] = useState<string>('REQUEST CONFIRMED');
+  const [resolvedZone, setResolvedZone] = useState<string>(deliveryZone || 'Chennai Zone');
 
   const checkBookingStatus = useCallback(async () => {
     if (!bookingId) return;
@@ -37,6 +39,9 @@ export default function ServiceSuccessScreen() {
         const data = snap.data();
         if (data.status) {
           setBookingStatus(data.status.replace(/_/g, ' ').toUpperCase());
+        }
+        if (data.deliveryZone) {
+          setResolvedZone(data.deliveryZone);
         }
       }
     } catch (e) {
@@ -79,7 +84,11 @@ export default function ServiceSuccessScreen() {
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Service Type</Text>
-              <Text style={styles.valueText}>{serviceTitle || 'Installation'}</Text>
+              <Text style={styles.valueText}>{serviceTitle || 'General Service'}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Delivery / Service Zone</Text>
+              <Text style={styles.valueText}>📍 {resolvedZone}</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Date</Text>
@@ -199,7 +208,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       ...typography.labelSmall,
       color: colors.success,
       fontWeight: '800',
-      backgroundColor: isDark ? 'rgba(46, 125, 50, 0.25)' : '#E8F5E9',
+      backgroundColor: isDark ? 'rgba(62, 175, 118, 0.25)' : '#E8F5EE',
       paddingHorizontal: spacing.sm,
       paddingVertical: 2,
       borderRadius: radius.full,

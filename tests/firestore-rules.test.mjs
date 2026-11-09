@@ -529,17 +529,88 @@ describe('AquaPure Firestore Security Rules', () => {
     });
 
     // ── CREATE ──
-    it('PASS: authenticated user can create booking with their own userId', async () => {
+    it('PASS: authenticated user can create booking with their own userId (general_service)', async () => {
       const db = authedDb('customer-1');
       await assertSucceeds(db.collection('service_bookings').add({
         userId: 'customer-1',
-        serviceType: 'maintenance',
+        serviceType: 'general_service',
         address: { fullName: 'Customer', city: 'Mumbai', pincode: '400001' },
         preferredDate: 'Tomorrow',
         preferredTime: 'Morning (09:00 AM - 12:00 PM)',
         status: 'requested',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+      }));
+    });
+
+    it('PASS: authenticated user can book Leakage service', async () => {
+      const db = authedDb('customer-1');
+      await assertSucceeds(db.collection('service_bookings').add({
+        userId: 'customer-1',
+        serviceType: 'leakage',
+        address: { fullName: 'Customer', city: 'Mumbai', pincode: '400001' },
+        preferredDate: 'Tomorrow',
+        preferredTime: 'Morning (09:00 AM - 12:00 PM)',
+        notes: 'Pipe dripping near elbow joint',
+        status: 'requested',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+    });
+
+    it('PASS: authenticated user can book Low Flow service', async () => {
+      const db = authedDb('customer-1');
+      await assertSucceeds(db.collection('service_bookings').add({
+        userId: 'customer-1',
+        serviceType: 'low_flow',
+        address: { fullName: 'Customer', city: 'Mumbai', pincode: '400001' },
+        preferredDate: 'Tomorrow',
+        preferredTime: 'Afternoon (12:00 PM - 03:00 PM)',
+        notes: 'Very slow water dispense rate',
+        status: 'requested',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+    });
+
+    it('PASS: authenticated user can book Filter Change service', async () => {
+      const db = authedDb('customer-1');
+      await assertSucceeds(db.collection('service_bookings').add({
+        userId: 'customer-1',
+        serviceType: 'filter_change',
+        address: { fullName: 'Customer', city: 'Mumbai', pincode: '400001' },
+        preferredDate: 'Weekend',
+        preferredTime: 'Morning (09:00 AM - 12:00 PM)',
+        notes: 'Annual sediment & carbon filter change',
+        status: 'requested',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+    });
+
+    it('PASS: authenticated user can book General Service', async () => {
+      const db = authedDb('customer-1');
+      await assertSucceeds(db.collection('service_bookings').add({
+        userId: 'customer-1',
+        serviceType: 'general_service',
+        address: { fullName: 'Customer', city: 'Mumbai', pincode: '400001' },
+        preferredDate: 'In 2 Days',
+        preferredTime: 'Evening (03:00 PM - 07:00 PM)',
+        notes: 'Multi-point inspection and TDS calibration',
+        status: 'requested',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+    });
+
+    it('FAIL: user cannot create booking with unsupported service type', async () => {
+      const db = authedDb('customer-1');
+      await assertFails(db.collection('service_bookings').add({
+        userId: 'customer-1',
+        serviceType: 'unsupported_custom_service',
+        address: { fullName: 'Customer', city: 'Mumbai', pincode: '400001' },
+        status: 'requested',
+        createdAt: new Date().toISOString(),
       }));
     });
 

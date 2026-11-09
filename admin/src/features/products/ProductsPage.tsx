@@ -41,6 +41,10 @@ const FALLBACK_IMG =
 function handleImgError(e: SyntheticEvent<HTMLImageElement>) {
   const img = e.currentTarget;
   img.onerror = null;
+  if (img.src && (img.src.includes('aqua-touch') || img.alt?.includes('Aqua Touch'))) {
+    img.src = '/images/products/aqua-touch.jpg';
+    return;
+  }
   img.src = FALLBACK_IMG;
 }
 
@@ -84,7 +88,9 @@ export function ProductsPage() {
     const unsub = onSnapshot(
       collection(db, 'products'),
       (snapshot) => {
-        const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Product));
+        const list = snapshot.docs
+          .map((d) => ({ id: d.id, ...d.data() } as Product))
+          .filter((p) => p.id !== 'system_delivery_policy' && !p.id.startsWith('system_'));
         setProducts(list);
         setLoading(false);
         setError(null);
@@ -116,7 +122,23 @@ export function ProductsPage() {
     const matchesCat =
       selectedCategory === 'all' ||
       p.categoryId === selectedCategory ||
-      (p.category && p.category.toLowerCase().includes(selectedCategory.toLowerCase()));
+      (p.category && p.category.toLowerCase() === (CATEGORY_DEFINITIONS[selectedCategory]?.name || '').toLowerCase()) ||
+      (selectedCategory === 'ro-water-purifiers' && (p.categoryId === 'water-purifiers' || (p.category && p.category.toLowerCase().includes('purifier')))) ||
+      (selectedCategory === 'water-dispensers' && (p.categoryId === 'water-dispensers' || (p.category && p.category.toLowerCase().includes('dispenser')))) ||
+      (selectedCategory === 'booster-pumps' && (p.categoryId === 'water-pumps' || (p.category && p.category.toLowerCase().includes('pump')))) ||
+      (selectedCategory === 'smps-power-units' && (p.categoryId === 'smps-power-units' || (p.name && p.name.includes('SMPS')))) ||
+      (selectedCategory === 'water-treatment-accessories-filters' && (
+        p.categoryId === 'water-treatment-accessories-filters' ||
+        p.categoryId === 'filters-cartridges' ||
+        p.categoryId === 'spare-parts-accessories' ||
+        p.categoryId === 'bottles-storage' ||
+        (p.category && (
+          p.category.toLowerCase().includes('filter') ||
+          p.category.toLowerCase().includes('spare') ||
+          p.category.toLowerCase().includes('accessories') ||
+          p.category.toLowerCase().includes('bottle')
+        ))
+      ));
 
     const q = search.trim().toLowerCase();
     const matchesSearch =
@@ -422,7 +444,20 @@ export function ProductsPage() {
                 const count = products.filter(
                   (p) =>
                     p.categoryId === cat.id ||
-                    (p.category && p.category.toLowerCase().includes(cat.id.toLowerCase()))
+                    p.category === cat.name ||
+                    (cat.id === 'ro-water-purifiers' && (p.categoryId === 'water-purifiers' || p.category === 'Water Purifiers')) ||
+                    (cat.id === 'water-dispensers' && (p.categoryId === 'water-dispensers' || p.category === 'Water Dispensers')) ||
+                    (cat.id === 'booster-pumps' && (p.categoryId === 'water-pumps' || p.category === 'Water Pumps')) ||
+                    (cat.id === 'smps-power-units' && (p.categoryId === 'smps-power-units' || (p.name && p.name.includes('SMPS')))) ||
+                    (cat.id === 'water-treatment-accessories-filters' && (
+                      p.categoryId === 'water-treatment-accessories-filters' ||
+                      p.categoryId === 'filters-cartridges' ||
+                      p.categoryId === 'spare-parts-accessories' ||
+                      p.categoryId === 'bottles-storage' ||
+                      p.category === 'Filters & Cartridges' ||
+                      p.category === 'Spare Parts & Accessories' ||
+                      p.category === 'Bottles & Storage'
+                    ))
                 ).length;
                 return (
                   <option key={cat.id} value={cat.id}>
@@ -524,7 +559,11 @@ export function ProductsPage() {
                       <td style={{ padding: '12px 16px', minWidth: 240 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <img
-                            src={p.imageUrl || FALLBACK_IMG}
+                            src={
+                              p.imageUrl?.includes('aqua-touch') || p.name === 'Aqua Touch' || p.id === 'AP-WP-061'
+                                ? '/images/products/aqua-touch.jpg'
+                                : (p.imageUrl || FALLBACK_IMG)
+                            }
                             alt={p.name}
                             onError={handleImgError}
                             style={{
@@ -801,7 +840,7 @@ interface ProductFormModalProps {
 function ProductFormModal({ title, initialProduct, onClose, onSave }: ProductFormModalProps) {
   const [id, setId] = useState(initialProduct?.id || `prod-${Date.now().toString().slice(-6)}`);
   const [name, setName] = useState(initialProduct?.name || '');
-  const [categoryId, setCategoryId] = useState<string>(initialProduct?.categoryId || 'water-purifiers');
+  const [categoryId, setCategoryId] = useState<string>(initialProduct?.categoryId || 'ro-water-purifiers');
   const [customerPrice, setCustomerPrice] = useState(initialProduct?.customerPrice || 0);
   const [dealerPrice, setDealerPrice] = useState(initialProduct?.dealerPrice || 0);
   const [stock, setStock] = useState(initialProduct?.stock || 50);
@@ -848,9 +887,9 @@ function ProductFormModal({ title, initialProduct, onClose, onSave }: ProductFor
         stockStatus,
         active,
         imageUrl: imageUrl.trim() || FALLBACK_IMG,
-        description: description.trim() || `${name} - Genuine AquaPure official component.`,
+        description: description.trim() || `${name} - Genuine Water Shell official component.`,
         specifications: initialProduct?.specifications || [
-          { label: 'Brand', value: 'AquaPure' },
+          { label: 'Brand', value: 'Water Shell' },
           { label: 'Warranty', value: '1 Year Manufacturer Warranty' },
         ],
         createdAt: initialProduct?.createdAt || now,
@@ -970,7 +1009,7 @@ function ProductFormModal({ title, initialProduct, onClose, onSave }: ProductFor
               className="input"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. AquaPure Copper RO+UV Purifier"
+              placeholder="e.g. Water Shell Copper RO+UV Purifier"
               required
               style={{ width: '100%' }}
             />

@@ -27,16 +27,32 @@ export interface UserProfile {
   phone?: string;
   role: UserRole;
   dealerStatus?: DealerStatus;
+  shopName?: string;
+  shopAddress?: string;
   businessName?: string;
   gstNumber?: string | null;
   addresses: Address[];
+  city?: string;
+  pincode?: string;
+  state?: string;
+  whatsapp?: string;
+  latitude?: number;
+  longitude?: number;
+  zone?: string;
+  zoneId?: string;
+  specialties?: string[];
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export type ProductCategory =
-  | 'water-purifiers'
+  | 'ro-water-purifiers'
   | 'water-dispensers'
+  | 'booster-pumps'
+  | 'smps-power-units'
+  | 'water-treatment-accessories-filters'
+  | 'water-purifiers'
   | 'water-pumps'
   | 'filters-cartridges'
   | 'spare-parts-accessories'
@@ -94,6 +110,7 @@ export interface OrderItem {
   imageUrl: string;
   price: number;
   quantity: number;
+  fulfillmentMethod?: 'direct_delivery' | 'local_dealer_service';
 }
 
 export interface Order {
@@ -109,6 +126,16 @@ export interface Order {
   subtotal: number;
   total: number;
   shippingAddress: Address;
+  deliveryZone?: string;
+  baseOrigin?: string;
+  fulfillmentType?: 'direct_delivery' | 'local_dealer_service' | 'mixed';
+  fulfillmentSummary?: {
+    fulfillmentType: 'direct_delivery' | 'local_dealer_service' | 'mixed';
+    directDeliveryCount: number;
+    dealerServiceCount: number;
+    originBranch: string;
+    matchedZone?: string;
+  };
   paymentProvider: string;
   paymentStatus: PaymentStatus;
   paymentReference?: string;
@@ -120,11 +147,19 @@ export interface Order {
 }
 
 export type ServiceType =
+  | 'leakage'
+  | 'low_flow'
+  | 'filter_change'
+  | 'general_service';
+
+export type LegacyServiceType =
   | 'installation'
   | 'maintenance'
   | 'repair'
   | 'filter_replacement'
   | 'general_inquiry';
+
+export type AnyServiceType = ServiceType | LegacyServiceType | (string & {});
 
 export type ServiceStatus =
   | 'requested'
@@ -136,11 +171,15 @@ export type ServiceStatus =
 export interface ServiceBooking {
   id: string;
   userId: string;
-  serviceType: ServiceType;
+  serviceType: ServiceType | LegacyServiceType | string;
   address: Address;
   preferredDate: string;
   preferredTime: string;
   notes?: string;
+  deliveryZone?: string;
+  baseOrigin?: string;
+  assignedTechnician?: string;
+  diagnosticNotes?: string;
   status: ServiceStatus;
   createdAt: string;
   updatedAt: string;

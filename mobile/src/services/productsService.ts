@@ -10,6 +10,7 @@ import { collection, getDocs, doc, getDoc, query, where, writeBatch } from 'fire
 import { db } from './firebase';
 import { Product, ProductCategory } from '@/types';
 import { SEED_PRODUCTS, CATEGORIES, CategoryInfo, generateCategories } from '@/data/seedProducts';
+import { PricingService } from './pricingService';
 
 export class ProductsService {
   /**
@@ -31,6 +32,7 @@ export class ProductsService {
     categoryId?: ProductCategory | 'all';
     search?: string;
     sortBy?: 'popular' | 'price_asc' | 'price_desc' | 'name';
+    isDealer?: boolean;
   }): Promise<Product[]> {
     let products: Product[] = [];
 
@@ -38,16 +40,15 @@ export class ProductsService {
       // Attempt to load from Firestore if network and credentials are active
       if (process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID) {
         const productsCol = collection(db, 'products');
-        let q = query(productsCol, where('active', '==', true));
-        if (options?.categoryId && options.categoryId !== 'all') {
-          q = query(productsCol, where('active', '==', true), where('categoryId', '==', options.categoryId));
-        }
+        const q = query(productsCol, where('active', '==', true));
         const snapshot = await getDocs(q);
         if (!snapshot.empty) {
-          products = snapshot.docs.map((docSnap) => ({
-            id: docSnap.id,
-            ...(docSnap.data() as Omit<Product, 'id'>),
-          }));
+          products = snapshot.docs
+            .map((docSnap) => ({
+              id: docSnap.id,
+              ...(docSnap.data() as Omit<Product, 'id'>),
+            }))
+            .filter((p) => p.id !== 'system_delivery_policy' && !p.id.startsWith('system_'));
         }
       }
     } catch {
@@ -58,24 +59,33 @@ export class ProductsService {
     // Fall back to seed dataset if Firestore didn't return any items
     if (products.length === 0) {
       products = [...SEED_PRODUCTS];
-      if (options?.categoryId && options.categoryId !== 'all') {
-        const catTarget = options.categoryId.toLowerCase();
-        products = products.filter((p) => {
-          const pCatId = (p.categoryId || '').toLowerCase();
-          const pCatName = (p.category || '').toLowerCase();
-          return (
-            pCatId === catTarget ||
-            pCatName === catTarget ||
-            (catTarget === 'purifiers' && (pCatId.includes('purifier') || pCatName.includes('purifier'))) ||
-            (catTarget === 'dispensers' && (pCatId.includes('dispenser') || pCatName.includes('dispenser'))) ||
-            (catTarget === 'pumps' && (pCatId.includes('pump') || pCatName.includes('pump'))) ||
-            (catTarget === 'filters' && (pCatId.includes('filter') || pCatName.includes('filter'))) ||
-            (catTarget === 'membranes' && (pCatId.includes('filter') || pCatName.includes('filter') || p.name.includes('Membrane'))) ||
-            (catTarget === 'spare-parts' && (pCatId.includes('spare') || pCatName.includes('spare'))) ||
-            (catTarget === 'bottles' && (pCatId.includes('bottle') || pCatName.includes('bottle')))
-          );
-        });
-      }
+    }
+
+    // Apply category filtering
+    if (options?.categoryId && options.categoryId !== 'all') {
+      const catTarget = options.categoryId.toLowerCase();
+      products = products.filter((p) => {
+        const pCatId = (p.categoryId || '').toLowerCase();
+        const pCatName = (p.category || '').toLowerCase();
+        return (
+          pCatId === catTarget ||
+          pCatName === catTarget ||
+          ((catTarget === 'ro-water-purifiers' || catTarget === 'water-purifiers' || catTarget === 'purifiers') &&
+            (pCatId.includes('purifier') || pCatName.includes('purifier'))) ||
+          ((catTarget === 'water-dispensers' || catTarget === 'dispensers') &&
+            (pCatId.includes('dispenser') || pCatName.includes('dispenser'))) ||
+          ((catTarget === 'booster-pumps' || catTarget === 'water-pumps' || catTarget === 'pumps') &&
+            (pCatId.includes('pump') || pCatName.includes('pump'))) ||
+          ((catTarget === 'smps-power-units' || catTarget === 'smps' || catTarget === 'power') &&
+            (pCatId.includes('smps') || pCatName.includes('smps') || p.name.includes('SMPS'))) ||
+          ((catTarget === 'water-treatment-accessories-filters' || catTarget === 'filters' || catTarget === 'filters-cartridges' || catTarget === 'spare-parts' || catTarget === 'spare-parts-accessories' || catTarget === 'bottles' || catTarget === 'bottles-storage') &&
+            (pCatId.includes('filter') || pCatName.includes('filter') ||
+             pCatId.includes('accessor') || pCatName.includes('accessor') ||
+             pCatId.includes('spare') || pCatName.includes('spare') ||
+             pCatId.includes('bottle') || pCatName.includes('bottle') ||
+             pCatId.includes('cartridge') || p.name.includes('Membrane')))
+        );
+      });
     }
 
     // Apply search query filter if present (name, description, specs, product code/id)
@@ -96,12 +106,21 @@ export class ProductsService {
 
     // Apply sorting
     if (options?.sortBy) {
+      const isDealer = Boolean(options?.isDealer);
       switch (options.sortBy) {
         case 'price_asc':
-          products.sort((a, b) => a.customerPrice - b.customerPrice);
+          products.sort(
+            (a, b) =>
+              PricingService.getEffectiveUnitPrice(a, isDealer) -
+              PricingService.getEffectiveUnitPrice(b, isDealer)
+          );
           break;
         case 'price_desc':
-          products.sort((a, b) => b.customerPrice - a.customerPrice);
+          products.sort(
+            (a, b) =>
+              PricingService.getEffectiveUnitPrice(b, isDealer) -
+              PricingService.getEffectiveUnitPrice(a, isDealer)
+          );
           break;
         case 'name':
           products.sort((a, b) => a.name.localeCompare(b.name));

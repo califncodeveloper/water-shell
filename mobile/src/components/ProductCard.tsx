@@ -19,6 +19,13 @@ import { Product } from '@/types';
 import { useTheme, spacing, radius, typography } from '@/theme';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useAuthStore } from '@/stores/authStore';
+import { PricingService } from '@/services/pricingService';
+
+// Local bundled images for official catalog additions (Aqua Touch etc.)
+const LOCAL_CATALOG_IMAGES: Record<string, any> = {
+  'AP-WP-061': require('../../assets/images/aqua-touch.jpg'),
+  'aqua-touch': require('../../assets/images/aqua-touch.jpg'),
+};
 
 interface ProductCardProps {
   product: Product;
@@ -29,13 +36,13 @@ interface ProductCardProps {
 
 export function ProductCard({
   product,
-  isDealer = false,
+  isDealer,
   onAddToCart,
   horizontal = false,
 }: ProductCardProps) {
   const { colors, isDark } = useTheme();
   const [imageError, setImageError] = useState(false);
-  const { user, setPendingAction } = useAuthStore();
+  const { user, isDealerApproved: authIsDealerApproved, setPendingAction } = useAuthStore();
 
   const handlePress = () => {
     router.push({
@@ -44,26 +51,17 @@ export function ProductCard({
     });
   };
 
-  const formattedCustomerPrice = new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(product?.customerPrice ?? product?.price ?? 0);
-
-  const formattedDealerPrice =
-    isDealer && product?.dealerPrice
-      ? new Intl.NumberFormat('en-IN', {
-          style: 'currency',
-          currency: 'INR',
-          maximumFractionDigits: 0,
-        }).format(product.dealerPrice)
-      : null;
+  // Resolve dealer pricing: explicit prop overrides or falls back to reactive auth store
+  const effectiveIsDealer = isDealer !== undefined ? isDealer : authIsDealerApproved;
+  const pricing = PricingService.getProductPricing(product, effectiveIsDealer);
 
   const categoryDisplay = (
     product?.category ||
     product?.categoryId?.replace(/-/g, ' ') ||
     'PRODUCTS'
   ).toUpperCase();
+
+  const localImg = LOCAL_CATALOG_IMAGES[product.id] || LOCAL_CATALOG_IMAGES[product.slug];
 
   return (
     <TouchableOpacity
@@ -79,13 +77,13 @@ export function ProductCard({
       onPress={handlePress}
       activeOpacity={0.85}
       accessibilityRole="button"
-      accessibilityLabel={`${product.name}, price ${formattedCustomerPrice}`}
+      accessibilityLabel={`${product.name}, price ${pricing.formattedPrice}`}
     >
       {/* Product Image */}
       <View
         style={[
           styles.imageContainer,
-          { backgroundColor: isDark ? '#160E21' : colors.surfaceMuted },
+          { backgroundColor: colors.surfaceMuted },
           horizontal && styles.imageContainerHorizontal,
         ]}
       >
@@ -96,8 +94,14 @@ export function ProductCard({
             resizeMode="cover"
             onError={() => setImageError(true)}
           />
+        ) : localImg ? (
+          <Image
+            source={localImg}
+            style={styles.image}
+            resizeMode="cover"
+          />
         ) : (
-          <View style={[styles.image, styles.placeholderContainer, { backgroundColor: isDark ? '#160E21' : colors.surfaceMuted }]}>
+          <View style={[styles.image, styles.placeholderContainer, { backgroundColor: colors.surfaceMuted }]}>
             <Ionicons name="water-outline" size={36} color={colors.textSecondary} />
             <Text style={[styles.placeholderText, { color: colors.textSecondary }]}>Image unavailable</Text>
           </View>
@@ -126,14 +130,16 @@ export function ProductCard({
         </View>
 
         <View style={styles.footerInfo}>
-          {/* Pricing */}
+          {/* Pricing — exclusive dealer pricing hides retail MRP completely */}
           <View style={styles.priceRow}>
-            <Text style={[styles.customerPrice, { color: isDark ? colors.yellow : colors.primary }]}>
-              {formattedCustomerPrice}
+            <Text style={[styles.customerPrice, { color: isDark ? colors.accent : colors.primary }]}>
+              {pricing.formattedPrice}
             </Text>
-            {isDealer && formattedDealerPrice && (
+            {pricing.isDealerActive && (
               <View style={[styles.dealerPricePill, { backgroundColor: colors.surfaceMuted }]}>
-                <Text style={[styles.dealerPriceText, { color: colors.coral }]}>Dealer: {formattedDealerPrice}</Text>
+                <Text style={[styles.dealerPriceText, { color: colors.secondary }]}>
+                  {pricing.wholesaleBadgeText || 'Dealer Wholesale'}
+                </Text>
               </View>
             )}
           </View>
@@ -141,7 +147,7 @@ export function ProductCard({
           {/* Action Button */}
           {onAddToCart && product.stockStatus !== 'out_of_stock' && (
             <TouchableOpacity
-              style={styles.cartButton}
+              style={[styles.cartButton, { backgroundColor: colors.accent }]}
               onPress={(e) => {
                 e.stopPropagation();
                 if (!user) {
@@ -171,8 +177,8 @@ export function ProductCard({
               activeOpacity={0.8}
               accessibilityLabel={`Add ${product.name} to cart`}
             >
-              <Ionicons name="cart-outline" size={16} color="#210440" />
-              <Text style={styles.cartButtonText}>Add</Text>
+              <Ionicons name="cart-outline" size={16} color="#1B1F5E" />
+              <Text style={[styles.cartButtonText, { color: '#1B1F5E' }]}>Add</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -265,7 +271,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   cartButton: {
-    backgroundColor: '#FFBA00',
+    backgroundColor: '#F5A623',
     borderRadius: radius.sm,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
@@ -277,7 +283,7 @@ const styles = StyleSheet.create({
   },
   cartButtonText: {
     ...typography.labelSmall,
-    color: '#210440',
+    color: '#1B1F5E',
     fontWeight: '700',
   },
   placeholderContainer: {

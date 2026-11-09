@@ -3,22 +3,22 @@
  */
 
 .products-page {
-  --pp-primary: var(--color-primary, #4a0a7a);
-  --pp-surface: var(--color-white, #fff);
-  --pp-text: var(--color-text, #1c1b22);
-  --pp-muted: var(--color-text-secondary, #6b6878);
-  --pp-border: rgba(20, 10, 40, 0.09);
-  --pp-ring: rgba(122, 48, 190, 0.22);
-  --pp-shadow: 0 1px 2px rgba(26, 2, 48, 0.04), 0 10px 28px -14px rgba(26, 2, 48, 0.14);
+  --pp-primary: var(--color-primary, #1B1F5E);
+  --pp-surface: var(--color-white, #FFFFFF);
+  --pp-text: var(--color-text, #1B1F5E);
+  --pp-muted: var(--color-text-secondary, #64748B);
+  --pp-border: var(--color-border, #E2E8F0);
+  --pp-ring: rgba(27, 31, 94, 0.16);
+  --pp-shadow: 0 1px 3px rgba(27, 31, 94, 0.04), 0 10px 24px -10px rgba(27, 31, 94, 0.08);
 
-  --ok-fg: #15803d;
-  --ok-bg: rgba(34, 197, 94, 0.14);
-  --warn-fg: #b45309;
-  --warn-bg: rgba(245, 158, 11, 0.16);
-  --err-fg: #b91c1c;
-  --err-bg: rgba(239, 68, 68, 0.12);
-  --neu-fg: #4b4560;
-  --neu-bg: rgba(20, 10, 40, 0.06);
+  --ok-fg: var(--color-success, #2E8B57);
+  --ok-bg: var(--color-success-bg, #E8F5EE);
+  --warn-fg: var(--color-warning, #F5A623);
+  --warn-bg: var(--color-warning-bg, #FEF5E7);
+  --err-fg: var(--color-error, #DC2626);
+  --err-bg: var(--color-error-bg, #FEE2E2);
+  --neu-fg: var(--color-text-secondary, #64748B);
+  --neu-bg: var(--color-surface-muted, #F1F5F9);
 
   width: 100%;
   max-width: 1600px;

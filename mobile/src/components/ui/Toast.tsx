@@ -74,30 +74,30 @@ export function Toast() {
         return {
           icon: 'checkmark-circle' as const,
           iconColor: colors.success,
-          borderColor: isDark ? 'rgba(22, 128, 61, 0.4)' : '#86EFAC',
-          bg: isDark ? '#102A1E' : '#F0FDF4',
+          borderColor: isDark ? 'rgba(62, 175, 118, 0.4)' : '#A7F3D0',
+          bg: isDark ? '#14291F' : '#F0FDF4',
         };
       case 'error':
         return {
           icon: 'alert-circle' as const,
           iconColor: colors.error,
-          borderColor: isDark ? 'rgba(180, 35, 24, 0.4)' : '#FECDD3',
-          bg: isDark ? '#2E1014' : '#FEF2F2',
+          borderColor: isDark ? 'rgba(248, 113, 113, 0.4)' : '#FECACA',
+          bg: isDark ? '#2D1518' : '#FEF2F2',
         };
       case 'warning':
         return {
           icon: 'warning' as const,
           iconColor: colors.warning,
-          borderColor: isDark ? 'rgba(180, 83, 9, 0.4)' : '#FDE68A',
-          bg: isDark ? '#2E1E0F' : '#FFFBEB',
+          borderColor: isDark ? 'rgba(245, 166, 35, 0.4)' : '#FDE68A',
+          bg: isDark ? '#2D2012' : '#FFFBEB',
         };
       case 'info':
       default:
         return {
           icon: 'information-circle' as const,
           iconColor: colors.info,
-          borderColor: isDark ? 'rgba(79, 70, 165, 0.4)' : '#C7D2FE',
-          bg: isDark ? '#191538' : '#EEF2FF',
+          borderColor: isDark ? 'rgba(115, 129, 240, 0.4)' : '#C7D2FE',
+          bg: isDark ? '#1A1E38' : '#EEF2FF',
         };
     }
   };

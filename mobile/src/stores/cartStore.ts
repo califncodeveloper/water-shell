@@ -9,6 +9,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Product, CartItem } from '@/types';
+import { PricingService } from '@/services/pricingService';
 
 interface CartState {
   items: CartItem[];
@@ -40,12 +41,8 @@ export const useCartStore = create<CartState>()(
             (item) => item.product.id === product.id
           );
 
-          const unitPrice =
-            isDealerApproved && product.dealerPrice
-              ? product.dealerPrice
-              : (product.customerPrice ?? product.price ?? 0);
-
-          const maxLimit = product.stockStatus === 'limited' ? 5 : 10;
+          const unitPrice = PricingService.getEffectiveUnitPrice(product, isDealerApproved);
+          const maxLimit = isDealerApproved ? 500 : (product.stockStatus === 'limited' ? 5 : 10);
 
           if (existingIndex > -1) {
             const nextItems = [...state.items];
@@ -110,11 +107,15 @@ export const useCartStore = create<CartState>()(
           items: state.items.map((item) => {
             if (item.product.id !== productId) return item;
 
-            const maxLimit = item.maxQuantity || (item.product.stockStatus === 'limited' ? 5 : 10);
+            const isDealerItem =
+              (item.maxQuantity != null && item.maxQuantity > 10) ||
+              (item.product.dealerPrice != null && item.unitPrice === item.product.dealerPrice);
+            const maxLimit = item.maxQuantity || (isDealerItem ? 500 : (item.product.stockStatus === 'limited' ? 5 : 10));
             const validQty = Math.min(Math.max(1, quantity), maxLimit);
 
             return {
               ...item,
+              maxQuantity: maxLimit,
               quantity: validQty,
               totalPrice: item.unitPrice * validQty,
             };
@@ -149,12 +150,11 @@ export const useCartStore = create<CartState>()(
           items: state.items
             .filter((item) => Boolean(item && item.product))
             .map((item) => {
-              const unitPrice =
-                isDealerApproved && item.product.dealerPrice
-                  ? item.product.dealerPrice
-                  : (item.product.customerPrice ?? item.unitPrice ?? item.price ?? 0);
+              const unitPrice = PricingService.getEffectiveUnitPrice(item.product, isDealerApproved);
+              const maxLimit = isDealerApproved ? 500 : (item.product.stockStatus === 'limited' ? 5 : 10);
               return {
                 ...item,
+                maxQuantity: maxLimit,
                 price: unitPrice,
                 unitPrice,
                 totalPrice: unitPrice * (item.quantity || 1),

@@ -67,7 +67,9 @@ interface AuthState {
     pass: string;
     name: string;
     phone: string;
-    businessName: string;
+    shopName: string;
+    shopAddress: string;
+    businessName?: string;
     gstNumber?: string;
   }) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
@@ -163,8 +165,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             isInitialized: true,
           });
 
-          // Sync cart dealer prices if dealer status was recognized
+          // Sync cart and checkout dealer prices if dealer status was recognized
           useCartStore.getState().syncDealerPrices(isDealerApproved);
+          useCheckoutStore.getState().syncDealerPrices(isDealerApproved);
 
           if (resolveProfileReady) {
             resolveProfileReady(profile);
@@ -208,6 +211,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isInitialized: true,
         });
         useCartStore.getState().syncDealerPrices(false);
+        useCheckoutStore.getState().syncDealerPrices(false);
         if (resolveProfileReady) {
           resolveProfileReady(null);
           resolveProfileReady = null;
@@ -289,10 +293,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  applyAsDealer: async ({ email, pass, name, phone, businessName, gstNumber }) => {
+  applyAsDealer: async ({ email, pass, name, phone, shopName, shopAddress, businessName, gstNumber }) => {
     set({ loading: true, error: null });
     try {
       const creds = await createUserWithEmailAndPassword(auth, email, pass);
+      const resolvedShopName = shopName || businessName || name;
       const newProfile: UserProfile = {
         uid: creds.user.uid,
         displayName: name,
@@ -300,16 +305,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         phone,
         role: 'dealer',
         dealerStatus: 'pending',
+        shopName: resolvedShopName,
+        shopAddress: shopAddress || '',
+        businessName: resolvedShopName,
+        gstNumber: gstNumber || null,
         addresses: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
       // Store in users collection
-      await setDoc(doc(db, 'users', creds.user.uid), {
-        ...newProfile,
-        businessName,
-        gstNumber: gstNumber || null,
-      });
+      await setDoc(doc(db, 'users', creds.user.uid), newProfile);
       set({
         user: creds.user,
         profile: newProfile,
@@ -343,6 +348,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isInitialized: true,
       });
       useCartStore.getState().syncDealerPrices(false);
+      useCheckoutStore.getState().syncDealerPrices(false);
     }
   },
 
@@ -353,12 +359,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const snap = await getDoc(doc(db, 'users', currentUser.uid));
       if (snap.exists()) {
         const profile = snap.data() as UserProfile;
+        const isDealer = profile.role === 'dealer';
+        const isDealerApproved = isDealer && profile.dealerStatus === 'approved';
+        const isAdmin = profile.role === 'admin';
         set({
           profile,
-          isDealer: profile.role === 'dealer',
-          isDealerApproved: profile.role === 'dealer' && profile.dealerStatus === 'approved',
-          isAdmin: profile.role === 'admin',
+          isDealer,
+          isDealerApproved,
+          isAdmin,
         });
+        useCartStore.getState().syncDealerPrices(isDealerApproved);
+        useCheckoutStore.getState().syncDealerPrices(isDealerApproved);
       }
     } catch {
       // Ignore

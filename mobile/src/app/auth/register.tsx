@@ -97,7 +97,7 @@ export default function RegisterScreen() {
     if (res.success) {
       showToast({
         title: 'Account Created',
-        message: 'Welcome to AquaPure! Your account is ready.',
+        message: 'Welcome to Water Shell! Your account is ready.',
         type: 'success',
       });
       const executed = executePendingAction(router);
@@ -323,7 +323,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
 
     // Hero
     hero: {
-      backgroundColor: isDark ? '#1C1327' : '#210440',
+      backgroundColor: colors.headerBackground,
       paddingHorizontal: spacing.lg,
       paddingBottom: spacing['4xl'] + spacing.md, // room for card overlap
       borderBottomLeftRadius: 32,
@@ -423,7 +423,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
-      backgroundColor: isDark ? 'rgba(167, 139, 250, 0.15)' : '#EBF4FE',
+      backgroundColor: isDark ? 'rgba(115, 129, 240, 0.15)' : '#EEF0F9',
       padding: spacing.md,
       borderRadius: 12,
       marginBottom: spacing.md,

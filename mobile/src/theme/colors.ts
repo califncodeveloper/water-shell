@@ -1,44 +1,74 @@
 /**
- * AquaPure Design System — Color Tokens & Theme Definitions
- * Source of truth: DESIGN.md §2 Brand Palette
- * Supports Light and Dark modes with dynamic proxy resolution and reactive theme tokens.
+ * Water Shell Design System — Color Tokens & Theme Definitions
+ * Brand Colors:
+ * - Primary (Deep Navy): #1B1F5E
+ * - Secondary (Forest Green): #2E8B57
+ * - Accent (Vibrant Orange): #F5A623
+ * - White: #FFFFFF
+ * - Light Gray: #F8FAFC
+ *
+ * Dark Mode Backgrounds:
+ * - Background (Deep Canvas): #101321
+ * - Card (Elevated Surface): #191D30
+ * - Surface Muted / Badges: #222740
+ *
+ * Supports Light Mode, Dark Mode and System Default with dynamic proxy resolution and reactive theme tokens.
  */
 
 export const lightColors = {
-  // Core brand colors
-  primary: '#210440',
-  primaryLight: '#3B1366',
-  primaryMuted: '#ECE5F5',
-  peach: '#FDB095',
-  coral: '#E5958E',
-  yellow: '#FFBA00',
+  // Brand Core
+  primary: '#1B1F5E',
+  primaryLight: '#2D3487',
+  primaryMuted: '#EEF0F9',
 
-  // Supporting neutrals
+  secondary: '#2E8B57',
+  secondaryLight: '#3BAA6B',
+  secondaryMuted: '#E8F5EE',
+
+  accent: '#F5A623',
+  accentLight: '#FBBF57',
+  accentMuted: '#FEF5E7',
+
+  // Neutrals & Surfaces
   white: '#FFFFFF',
+  lightGray: '#F8FAFC',
   card: '#FFFFFF',
   cardBackground: '#FFFFFF',
-  background: '#FFF4F0',
-  text: '#210440',
-  textSecondary: '#646464',
-  textMuted: '#9E94A8',
-  border: '#F0DAD5',
-  borderLight: '#F7EBE8',
-  surfaceMuted: '#FBE8E1',
+  surface: '#FFFFFF',
+  surfaceMuted: '#F1F5F9',
+  background: '#F8FAFC',
+
+  // Typography
+  text: '#1B1F5E',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
+
+  // Borders
+  border: '#E2E8F0',
+  borderLight: '#F1F5F9',
+
+  // Controls & Navigation
   inputBackground: '#FFFFFF',
-  headerBackground: '#210440',
+  headerBackground: '#1B1F5E',
   headerTitle: '#FFFFFF',
+  headerSubtitle: '#F5A623',
 
-  // Semantic colors
-  success: '#16803D',
-  warning: '#B45309',
-  error: '#B42318',
-  info: '#4F46A5',
+  // Semantic
+  success: '#2E8B57',
+  warning: '#F5A623',
+  error: '#DC2626',
+  info: '#1B1F5E',
 
-  // Raw utilities
+  // Compatibility Tokens (Legacy mappings)
+  peach: '#F5A623',
+  coral: '#2E8B57',
+  yellow: '#F5A623',
+
+  // Raw Utilities
   rawWhite: '#FFFFFF',
   rawBlack: '#000000',
-  cardShadow: 'rgba(33, 4, 64, 0.08)',
-  overlay: 'rgba(33, 4, 64, 0.5)',
+  cardShadow: 'rgba(27, 31, 94, 0.08)',
+  overlay: 'rgba(16, 19, 33, 0.6)',
 } as const;
 
 export type ThemeColors = {
@@ -46,39 +76,58 @@ export type ThemeColors = {
 };
 
 export const darkColors: ThemeColors = {
-  // Core brand colors tuned for deep obsidian surfaces
-  primary: '#A78BFA',
-  primaryLight: '#C4B5FD',
-  primaryMuted: '#2A1F3B',
-  peach: '#FDB095',
-  coral: '#E5958E',
-  yellow: '#FFBA00',
+  // Brand Core (Accessible brand tints for dark surfaces)
+  primary: '#7381F0',
+  primaryLight: '#949FF5',
+  primaryMuted: '#222740',
 
-  // Dark neutrals
-  white: '#FFFFFF', // Pure white for text on dark headers, buttons, badges
-  card: '#1C1327', // Elevated dark card surface
-  cardBackground: '#1C1327',
-  background: '#0F0918', // Deep royal obsidian background
-  text: '#F8F6FC', // High contrast crisp reading text
-  textSecondary: '#AFA6BA', // Muted lavender slate for secondary copy
-  textMuted: '#7C7288',
-  border: '#322444', // Elegant hairline border
-  borderLight: '#261A36',
-  surfaceMuted: '#261A35', // Secondary elevated surface / chips
-  inputBackground: '#1F152C',
-  headerBackground: '#160B22',
+  secondary: '#3EAF76',
+  secondaryLight: '#5FD498',
+  secondaryMuted: '#183626',
+
+  accent: '#F5A623',
+  accentLight: '#FBBF57',
+  accentMuted: '#3D2B11',
+
+  // Dark Neutrals & Surfaces
+  white: '#FFFFFF',
+  lightGray: '#F8FAFC',
+  card: '#191D30',
+  cardBackground: '#191D30',
+  surface: '#191D30',
+  surfaceMuted: '#222740',
+  background: '#101321',
+
+  // Typography
+  text: '#F8FAFC',
+  textSecondary: '#94A3B8',
+  textMuted: '#64748B',
+
+  // Borders
+  border: '#222740',
+  borderLight: '#2B3252',
+
+  // Controls & Navigation
+  inputBackground: '#191D30',
+  headerBackground: '#101321',
   headerTitle: '#FFFFFF',
+  headerSubtitle: '#F5A623',
 
-  // Semantic colors (tuned for dark surfaces)
-  success: '#34D399',
-  warning: '#FBBF24',
+  // Semantic
+  success: '#3EAF76',
+  warning: '#F5A623',
   error: '#F87171',
-  info: '#818CF8',
+  info: '#7381F0',
 
-  // Raw utilities
+  // Compatibility Tokens (Legacy mappings)
+  peach: '#F5A623',
+  coral: '#3EAF76',
+  yellow: '#F5A623',
+
+  // Raw Utilities
   rawWhite: '#FFFFFF',
   rawBlack: '#000000',
-  cardShadow: 'rgba(0, 0, 0, 0.4)',
+  cardShadow: 'rgba(0, 0, 0, 0.5)',
   overlay: 'rgba(0, 0, 0, 0.75)',
 };
 

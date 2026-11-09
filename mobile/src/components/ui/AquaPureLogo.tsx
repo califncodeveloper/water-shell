@@ -42,7 +42,7 @@ export interface AquaPureLogoProps {
    * Presentation variant:
    * - 'plain': Raw logo image with contain resizeMode and preserved aspect ratio.
    * - 'badge': Encased in a rounded, pure-white pill/card container with subtle shadow.
-   *   Ideal for dark backgrounds (like #210440 hero headers) so purple text remains high-contrast.
+   *   Ideal for dark backgrounds (like #1B1F5E hero headers) so logo text remains high-contrast.
    * - 'glass': Translucent white pill with subtle border.
    */
   variant?: 'plain' | 'badge' | 'glass';
@@ -62,8 +62,8 @@ export function AquaPureLogo({
   variant = 'plain',
   containerStyle,
   imageStyle,
-  accessibilityLabel = 'AquaPure — Pure Water. Better Living.',
-  testID = 'aquapure-logo',
+  accessibilityLabel = 'Water Shell — Pure Water, Pure Life',
+  testID = 'water-shell-logo',
 }: AquaPureLogoProps) {
   let resolvedWidth: number;
   let resolvedHeight: number;
@@ -147,3 +147,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+
+export const WaterShellLogo = AquaPureLogo;

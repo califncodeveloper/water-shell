@@ -478,11 +478,11 @@ export default function OrderDetailsScreen() {
                       </View>
                       <Text style={styles.stageDescription}>
                         {stage.key === 'placed' && 'Order received and payment confirmed.'}
-                        {stage.key === 'confirmed' && 'Items inspected and securely packed at AquaPure facility.'}
+                        {stage.key === 'confirmed' && 'Items inspected and securely packed at Water Shell facility.'}
                         {stage.key === 'shipped' &&
                           (order.courierName
                             ? `Dispatched with ${order.courierName}.`
-                            : 'Dispatched with AquaPure Logistics Express.')}
+                            : 'Dispatched with Water Shell Logistics Express.')}
                         {stage.key === 'delivered' && 'Delivered and verified with customer.'}
                       </Text>
 
@@ -708,13 +708,13 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: isDark ? '#140A20' : colors.primary,
+      backgroundColor: colors.headerBackground,
     },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: isDark ? '#140A20' : colors.primary,
+      backgroundColor: colors.headerBackground,
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
     },
@@ -917,7 +917,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       ...typography.labelSmall,
       fontSize: 9,
       fontWeight: '800',
-      color: '#210440',
+      color: '#1B1F5E',
     },
     stageDescription: {
       ...typography.bodySmall,
@@ -994,7 +994,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
     itemBuyAgainText: {
       ...typography.labelSmall,
-      color: '#210440',
+      color: '#1B1F5E',
       fontSize: 11,
       fontWeight: '700',
     },
@@ -1145,7 +1145,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
     mainBuyAgainText: {
       ...typography.label,
-      color: '#210440',
+      color: '#1B1F5E',
       fontSize: 16,
       fontWeight: '800',
     },

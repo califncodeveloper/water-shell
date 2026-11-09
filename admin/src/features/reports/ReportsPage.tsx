@@ -81,7 +81,7 @@ export function ReportsPage() {
         const key = item.productId || item.name;
         if (!productSales[key]) {
           // Find matching product in catalog
-          const cat = products.find((p) => p.id === item.productId)?.categoryId || 'water-purifiers';
+          const cat = products.find((p) => p.id === item.productId)?.categoryId || 'ro-water-purifiers';
           productSales[key] = {
             name: item.name,
             quantity: 0,
@@ -106,7 +106,21 @@ export function ReportsPage() {
   });
 
   Object.values(productSales).forEach((p) => {
-    const cat = categorySales[p.category] || categorySales['water-purifiers'];
+    let targetCat = p.category;
+    if (targetCat === 'water-purifiers' || targetCat === 'purifiers') targetCat = 'ro-water-purifiers';
+    else if (targetCat === 'water-pumps' || targetCat === 'pumps') targetCat = 'booster-pumps';
+    else if (targetCat === 'dispensers') targetCat = 'water-dispensers';
+    else if (
+      targetCat === 'filters-cartridges' ||
+      targetCat === 'spare-parts-accessories' ||
+      targetCat === 'bottles-storage' ||
+      targetCat === 'filters' ||
+      targetCat === 'spare-parts' ||
+      targetCat === 'membranes'
+    ) {
+      targetCat = p.name.includes('SMPS') ? 'smps-power-units' : 'water-treatment-accessories-filters';
+    }
+    const cat = categorySales[targetCat] || categorySales['ro-water-purifiers'];
     if (cat) {
       cat.revenue += p.revenue;
       cat.units += p.quantity;
@@ -168,7 +182,7 @@ export function ReportsPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `AquaPure_Orders_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `WaterShell_Orders_Report_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -244,11 +258,11 @@ export function ReportsPage() {
           </div>
         </div>
 
-        <div className="card" style={{ padding: 20, borderLeft: '4px solid #6a24b3' }}>
+        <div className="card" style={{ padding: 20, borderLeft: '4px solid #1B1F5E' }}>
           <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 500 }}>
             Verified Paid Revenue
           </div>
-          <div style={{ fontSize: 28, fontWeight: 700, marginTop: 4, color: '#6a24b3' }}>
+          <div style={{ fontSize: 28, fontWeight: 700, marginTop: 4, color: '#1B1F5E' }}>
             {loading ? '...' : formatPrice(paidRevenue)}
           </div>
           <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>
@@ -418,8 +432,8 @@ export function ReportsPage() {
                             width: 24,
                             height: 24,
                             borderRadius: '50%',
-                            background: idx === 0 ? '#FFBA00' : 'var(--color-surface-muted)',
-                            color: idx === 0 ? '#210440' : 'var(--color-text)',
+                            background: idx === 0 ? '#F5A623' : 'var(--color-surface-muted)',
+                            color: idx === 0 ? '#1B1F5E' : 'var(--color-text)',
                             display: 'grid',
                             placeItems: 'center',
                             fontWeight: 700,

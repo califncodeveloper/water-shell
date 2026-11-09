@@ -786,12 +786,11 @@ export class EmailService {
    */
   private static async dispatchViaMailServer(payload: any): Promise<boolean> {
     const rawEndpoints = [
-      process.env.EXPO_PUBLIC_MAIL_API_URL,
-      'https://aquapure-mail-api.onrender.com/api/send-email',
-      'http://10.0.2.2:5055/api/send-email',
       'http://10.68.181.57:5055/api/send-email',
+      'http://10.0.2.2:5055/api/send-email',
       'http://localhost:5055/api/send-email',
       'http://127.0.0.1:5055/api/send-email',
+      process.env.EXPO_PUBLIC_MAIL_API_URL,
     ].filter(Boolean) as string[];
 
     const endpoints = Array.from(new Set(rawEndpoints));

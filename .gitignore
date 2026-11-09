@@ -15,6 +15,10 @@ google-services.json
 */google-services.json
 !google-services.json.example
 !*/google-services.json.example
+GoogleService-Info.plist
+*/GoogleService-Info.plist
+!GoogleService-Info.plist.example
+!*/GoogleService-Info.plist.example
 local.properties
 */local.properties
 *.jks
@@ -33,6 +37,7 @@ web-build/
 *.aab
 *.jsbundle
 *.hbc
+*.tsbuildinfo
 
 # Android specific
 .gradle/

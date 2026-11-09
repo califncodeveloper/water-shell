@@ -61,6 +61,10 @@ function normalizeOrder(id: string, data: any): Order {
     subtotal: Number(data?.subtotal || data?.total || 0),
     total: Number(data?.total || 0),
     items: Array.isArray(data?.items) ? data.items : [],
+    deliveryZone: data?.deliveryZone || data?.fulfillmentSummary?.matchedZone || undefined,
+    baseOrigin: data?.baseOrigin || 'Tambaram Main Branch',
+    fulfillmentType: data?.fulfillmentType || data?.fulfillmentSummary?.fulfillmentType || undefined,
+    fulfillmentSummary: data?.fulfillmentSummary || undefined,
     shippingAddress: {
       id: data?.shippingAddress?.id || 'addr-default',
       label: data?.shippingAddress?.label || 'Delivery Address',
@@ -575,6 +579,54 @@ export function OrdersPage() {
                           {city}
                           {pincode}
                         </div>
+                        {o.deliveryZone && (
+                          <div style={{ marginTop: 4 }}>
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: '1px 6px',
+                                borderRadius: 4,
+                                background: '#EDE9FE',
+                                color: '#6D28D9',
+                              }}
+                            >
+                              📍 {o.deliveryZone} Zone
+                            </span>
+                          </div>
+                        )}
+                        {o.fulfillmentType && (
+                          <div style={{ marginTop: 2 }}>
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                fontSize: 9,
+                                fontWeight: 600,
+                                padding: '1px 5px',
+                                borderRadius: 4,
+                                background:
+                                  o.fulfillmentType === 'direct_delivery'
+                                    ? '#DCFCE7'
+                                    : o.fulfillmentType === 'local_dealer_service'
+                                    ? '#FFEDD5'
+                                    : '#E0F2FE',
+                                color:
+                                  o.fulfillmentType === 'direct_delivery'
+                                    ? '#15803D'
+                                    : o.fulfillmentType === 'local_dealer_service'
+                                    ? '#C2410C'
+                                    : '#0369A1',
+                              }}
+                            >
+                              {o.fulfillmentType === 'direct_delivery'
+                                ? 'Direct (Tambaram Hub)'
+                                : o.fulfillmentType === 'local_dealer_service'
+                                ? 'Dealer Serviced'
+                                : 'Mixed Fulfillment'}
+                            </span>
+                          </div>
+                        )}
                       </td>
 
                       <td>
@@ -759,7 +811,7 @@ export function OrdersPage() {
                   padding: 16,
                   borderRadius: 10,
                   background: 'var(--color-surface-muted)',
-                  marginBottom: 20,
+                  marginBottom: 16,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13, marginBottom: 8 }}>
@@ -784,6 +836,70 @@ export function OrdersPage() {
                     <strong>Email:</strong> {selectedOrder.shippingAddress.email}
                   </div>
                 )}
+              </div>
+
+              {/* Delivery Zone & Fulfillment Routing */}
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 10,
+                  background: 'linear-gradient(135deg, rgba(30, 77, 183, 0.04) 0%, rgba(30, 77, 183, 0.08) 100%)',
+                  border: '1px solid rgba(30, 77, 183, 0.2)',
+                  marginBottom: 16,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13, marginBottom: 8, color: '#1E4DB7' }}>
+                  <Truck size={16} />
+                  DELIVERY & FULFILLMENT ROUTING
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                  <span>Base Origin:</span>
+                  <strong>{selectedOrder.baseOrigin || 'Tambaram Main Branch'}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                  <span>Delivery Zone:</span>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      background: '#EDE9FE',
+                      color: '#6D28D9',
+                    }}
+                  >
+                    📍 {selectedOrder.deliveryZone || 'Chennai Zone'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                  <span>Fulfillment Strategy:</span>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      background:
+                        selectedOrder.fulfillmentType === 'direct_delivery'
+                          ? '#DCFCE7'
+                          : selectedOrder.fulfillmentType === 'local_dealer_service'
+                          ? '#FFEDD5'
+                          : '#E0F2FE',
+                      color:
+                        selectedOrder.fulfillmentType === 'direct_delivery'
+                          ? '#15803D'
+                          : selectedOrder.fulfillmentType === 'local_dealer_service'
+                          ? '#C2410C'
+                          : '#0369A1',
+                    }}
+                  >
+                    {selectedOrder.fulfillmentType === 'direct_delivery'
+                      ? 'Direct Machine Dispatch'
+                      : selectedOrder.fulfillmentType === 'local_dealer_service'
+                      ? 'Local Dealer Servicing'
+                      : 'Mixed Order (Direct + Dealer)'}
+                  </span>
+                </div>
               </div>
 
               {/* Payment Details */}
@@ -847,8 +963,22 @@ export function OrdersPage() {
                         )}
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 13 }}>{item.name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
-                            Qty: {item.quantity} × {formatPrice(item.price)}
+                          <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                            <span>Qty: {item.quantity} × {formatPrice(item.price)}</span>
+                            {item.fulfillmentMethod && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  padding: '1px 5px',
+                                  borderRadius: 3,
+                                  background: item.fulfillmentMethod === 'direct_delivery' ? '#DCFCE7' : '#FFEDD5',
+                                  color: item.fulfillmentMethod === 'direct_delivery' ? '#15803D' : '#C2410C',
+                                }}
+                              >
+                                {item.fulfillmentMethod === 'direct_delivery' ? 'Direct Dispatch' : 'Dealer Serviced'}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>

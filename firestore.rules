@@ -35,7 +35,13 @@ service cloud.firestore {
     // Users Collection
     // ─────────────────────────────────────────────
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
+      // Allow user to read own profile, admins to read all profiles,
+      // and allow customers/visitors to query approved dealer records for the dealer locator.
+      // Private dealer applications (pending/rejected) and customer accounts are strictly blocked.
+      allow read: if isOwner(userId) || isAdmin() || (
+        resource.data.role == 'dealer' &&
+        resource.data.dealerStatus == 'approved'
+      );
       
       // On creation:
       // - Must match caller's auth UID
@@ -51,9 +57,9 @@ service cloud.firestore {
       );
       
       // On update:
-      // - Admins can update any field (including role and dealer approval)
+      // - Admins can update any field (including role, dealer approval, location coordinates, active status)
       // - Regular users can update their profile fields (name, phone, addresses, etc.)
-      // - Regular users CANNOT escalate their role or approve dealer status or change uid
+      // - Regular users CANNOT escalate their role, approve dealer status, change active status, or change uid
       allow update: if isAdmin() || (
         isOwner(userId) &&
         (
@@ -63,6 +69,10 @@ service cloud.firestore {
         (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['dealerStatus']) ||
           ('dealerStatus' in resource.data && request.resource.data.dealerStatus == resource.data.dealerStatus)
+        ) &&
+        (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isActive']) ||
+          ('isActive' in resource.data && request.resource.data.isActive == resource.data.isActive)
         ) &&
         (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid']) ||
@@ -153,8 +163,16 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
         request.resource.data.userId == request.auth.uid &&
         (!('status' in request.resource.data) || request.resource.data.status == 'requested') &&
-        (!('serviceType' in request.resource.data) || request.resource.data.serviceType is string) &&
-        (!('address' in request.resource.data) || request.resource.data.address is map);
+        (!('serviceType' in request.resource.data) || (
+          request.resource.data.serviceType is string &&
+          request.resource.data.serviceType in [
+            'leakage', 'low_flow', 'filter_change', 'general_service',
+            'installation', 'maintenance', 'repair', 'filter_replacement', 'general_inquiry'
+          ]
+        )) &&
+        (!('address' in request.resource.data) || request.resource.data.address is map) &&
+        (!('deliveryZone' in request.resource.data) || request.resource.data.deliveryZone is string) &&
+        (!('baseOrigin' in request.resource.data) || request.resource.data.baseOrigin is string);
 
       // Booking Updates:
       // - Admins can advance status or manage tickets
@@ -168,6 +186,14 @@ service cloud.firestore {
       );
 
       allow delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────
+    // System Settings & Delivery Policies
+    // ─────────────────────────────────────────────
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAuthenticated() || isAdmin();
     }
   }
 }

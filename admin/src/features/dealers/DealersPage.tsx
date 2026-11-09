@@ -1,7 +1,9 @@
 /**
  * AquaPure Admin — Customers & Dealers Account Management
  * 100% Live Real-Time Data from Cloud Firestore.
- * Supports dealer approval/rejection workflows, customer management, role controls, zero mock data.
+ * Supports dealer approval/rejection workflows, dealer shop details management,
+ * geographical coordinate management (GPS lat/long), account activation/deactivation,
+ * and customer profiles with zero mock data.
  */
 
 import { useState, useEffect } from 'react';
@@ -18,6 +20,10 @@ import {
   Building,
   X,
   RefreshCw,
+  Edit3,
+  AlertTriangle,
+  Power,
+  Navigation,
 } from 'lucide-react';
 import { db } from '../../services/firebase';
 import {
@@ -40,6 +46,22 @@ export function DealersPage() {
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [actionInProgress, setActionInProgress] = useState(false);
+
+  // Dealer Details & Coordinates Edit Form
+  const [isEditingDealer, setIsEditingDealer] = useState(false);
+  const [editForm, setEditForm] = useState({
+    shopName: '',
+    displayName: '',
+    phone: '',
+    whatsapp: '',
+    email: '',
+    shopAddress: '',
+    city: '',
+    pincode: '',
+    zoneId: 'chennai',
+    latitude: '',
+    longitude: '',
+  });
 
   // Real-Time subscription to users collection
   useEffect(() => {
@@ -91,13 +113,47 @@ export function DealersPage() {
     return () => unsub();
   }, []);
 
-  // Keep selected user in sync with real-time updates
+  // Keep selected user in sync with real-time updates and populate edit form
   useEffect(() => {
     if (selectedUser) {
       const updated = users.find((u) => u.uid === selectedUser.uid);
-      if (updated) setSelectedUser(updated);
+      if (updated) {
+        setSelectedUser(updated);
+        setEditForm({
+          shopName: updated.shopName || updated.businessName || '',
+          displayName: updated.displayName || '',
+          phone: updated.phone || '',
+          whatsapp: updated.whatsapp || updated.phone || '',
+          email: updated.email || '',
+          shopAddress: updated.shopAddress || '',
+          city: updated.city || '',
+          pincode: updated.pincode || '',
+          zoneId: updated.zoneId || 'chennai',
+          latitude: updated.latitude !== undefined && updated.latitude !== null ? String(updated.latitude) : '',
+          longitude: updated.longitude !== undefined && updated.longitude !== null ? String(updated.longitude) : '',
+        });
+      }
     }
   }, [users]);
+
+  // Open User Detail Drawer & reset edit form
+  const handleSelectUser = (u: UserProfile) => {
+    setSelectedUser(u);
+    setIsEditingDealer(false);
+    setEditForm({
+      shopName: u.shopName || u.businessName || '',
+      displayName: u.displayName || '',
+      phone: u.phone || '',
+      whatsapp: u.whatsapp || u.phone || '',
+      email: u.email || '',
+      shopAddress: u.shopAddress || '',
+      city: u.city || '',
+      pincode: u.pincode || '',
+      zoneId: u.zoneId || 'chennai',
+      latitude: u.latitude !== undefined && u.latitude !== null ? String(u.latitude) : '',
+      longitude: u.longitude !== undefined && u.longitude !== null ? String(u.longitude) : '',
+    });
+  };
 
   // Approve / Reject Dealer Status
   const handleUpdateDealerStatus = async (uid: string, newStatus: DealerStatus) => {
@@ -115,6 +171,84 @@ export function DealersPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Database update failed';
       alert(`Could not update dealer status in Firestore: ${msg}`);
+    } finally {
+      setActionInProgress(false);
+    }
+  };
+
+  // Activate / Deactivate Dealer Account
+  const handleToggleActiveStatus = async (uid: string, currentActive: boolean) => {
+    setActionInProgress(true);
+    try {
+      const newActive = !currentActive;
+      await updateDoc(doc(db, 'users', uid), {
+        isActive: newActive,
+        updatedAt: new Date().toISOString(),
+      });
+      const target = users.find((u) => u.uid === uid);
+      setActionNotice(
+        `Dealer account ${target?.shopName || target?.displayName || uid} is now ${
+          newActive ? 'ACTIVE (Visible in Customer Locator)' : 'DEACTIVATED (Hidden from Customer Locator)'
+        }`
+      );
+      setTimeout(() => setActionNotice(null), 3500);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Status update failed';
+      alert(`Could not toggle dealer active status in Firestore: ${msg}`);
+    } finally {
+      setActionInProgress(false);
+    }
+  };
+
+  // Save Dealer Shop Details & GPS Coordinates
+  const handleSaveDealerDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    setActionInProgress(true);
+
+    try {
+      let lat: number | null = null;
+      let lng: number | null = null;
+
+      if (editForm.latitude.trim()) {
+        const parsedLat = parseFloat(editForm.latitude.trim());
+        if (isNaN(parsedLat) || parsedLat < -90 || parsedLat > 90) {
+          throw new Error('Latitude must be a valid number between -90 and 90');
+        }
+        lat = parsedLat;
+      }
+
+      if (editForm.longitude.trim()) {
+        const parsedLng = parseFloat(editForm.longitude.trim());
+        if (isNaN(parsedLng) || parsedLng < -180 || parsedLng > 180) {
+          throw new Error('Longitude must be a valid number between -180 and 180');
+        }
+        lng = parsedLng;
+      }
+
+      const updateData: Record<string, any> = {
+        shopName: editForm.shopName.trim(),
+        businessName: editForm.shopName.trim(),
+        displayName: editForm.displayName.trim(),
+        phone: editForm.phone.trim(),
+        whatsapp: editForm.whatsapp.trim(),
+        email: editForm.email.trim(),
+        shopAddress: editForm.shopAddress.trim(),
+        city: editForm.city.trim(),
+        pincode: editForm.pincode.trim(),
+        zoneId: editForm.zoneId,
+        latitude: lat,
+        longitude: lng,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await updateDoc(doc(db, 'users', selectedUser.uid), updateData);
+      setActionNotice('Dealer shop details and geographical coordinates updated successfully.');
+      setTimeout(() => setActionNotice(null), 3500);
+      setIsEditingDealer(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save dealer';
+      alert(`Could not save dealer details: ${msg}`);
     } finally {
       setActionInProgress(false);
     }
@@ -163,10 +297,13 @@ export function DealersPage() {
       const nameMatch = (u.displayName || '').toLowerCase().includes(q);
       const emailMatch = (u.email || '').toLowerCase().includes(q);
       const businessMatch = (u.businessName || '').toLowerCase().includes(q);
+      const shopMatch = (u.shopName || '').toLowerCase().includes(q);
+      const cityMatch = (u.city || '').toLowerCase().includes(q);
+      const pincodeMatch = (u.pincode || '').includes(q);
       const phoneMatch = (u.phone || '').includes(q);
       const gstMatch = (u.gstNumber || '').toLowerCase().includes(q);
       const uidMatch = u.uid.toLowerCase().includes(q);
-      return nameMatch || emailMatch || businessMatch || phoneMatch || gstMatch || uidMatch;
+      return nameMatch || emailMatch || businessMatch || shopMatch || cityMatch || pincodeMatch || phoneMatch || gstMatch || uidMatch;
     }
 
     return true;
@@ -208,7 +345,7 @@ export function DealersPage() {
             </span>
           </div>
           <p className="text-secondary" style={{ marginTop: 4 }}>
-            Verify wholesale trade dealer applications, review customer profiles, and monitor lifetime purchase activity
+            Verify wholesale trade dealer applications, manage shop details, update GPS coordinates, and monitor lifetime purchase activity.
           </p>
         </div>
       </header>
@@ -261,7 +398,7 @@ export function DealersPage() {
             <input
               type="text"
               className="input search-input"
-              placeholder="Search by name, email, company, phone, GST, UID..."
+              placeholder="Search by name, email, shop, city, PIN, phone, GST..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -342,7 +479,8 @@ export function DealersPage() {
                   <th>User / Business</th>
                   <th>Role</th>
                   <th>Contact Info</th>
-                  <th>Dealer Status</th>
+                  <th>Dealer & Active Status</th>
+                  <th>Location & GPS</th>
                   <th>Orders / Spend</th>
                   <th>Joined Date</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
@@ -352,21 +490,28 @@ export function DealersPage() {
                 {filteredUsers.map((u) => {
                   const userOrders = getUserOrders(u.uid);
                   const totalSpend = getUserTotalSpend(u.uid);
+                  const hasCoordinates = typeof u.latitude === 'number' && typeof u.longitude === 'number';
+                  const isDealerActive = u.isActive !== false;
 
                   return (
                     <tr
                       key={u.uid}
                       tabIndex={0}
-                      onClick={() => setSelectedUser(u)}
+                      onClick={() => handleSelectUser(u)}
                       className={`op-row ${selectedUser?.uid === u.uid ? 'row-selected' : ''}`}
                     >
                       <td>
                         <div style={{ fontWeight: 600, fontSize: 14 }}>
-                          {u.displayName || (u.role === 'dealer' && u.businessName) || 'User'}
+                          {u.shopName || u.businessName || u.displayName || 'User'}
                         </div>
-                        {u.businessName && (
+                        {(u.shopName || u.businessName) && (
                           <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <Building size={12} /> {u.businessName}
+                            <Building size={12} /> {u.shopName || u.businessName}
+                          </div>
+                        )}
+                        {u.shopAddress && (
+                          <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 2 }}>
+                            📍 {u.shopAddress}
                           </div>
                         )}
                         <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', fontFamily: 'var(--font-mono)' }}>
@@ -402,19 +547,51 @@ export function DealersPage() {
 
                       <td>
                         {u.role === 'dealer' ? (
-                          <span
-                            className={`badge ${
-                              u.dealerStatus === 'approved'
-                                ? 'badge-success'
-                                : u.dealerStatus === 'pending'
-                                ? 'badge-warning'
-                                : 'badge-error'
-                            }`}
-                          >
-                            {(u.dealerStatus || 'PENDING').toUpperCase()}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <span
+                              className={`badge ${
+                                u.dealerStatus === 'approved'
+                                  ? 'badge-success'
+                                  : u.dealerStatus === 'pending'
+                                  ? 'badge-warning'
+                                  : 'badge-error'
+                              }`}
+                            >
+                              {(u.dealerStatus || 'PENDING').toUpperCase()}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: isDealerActive ? '#16803D' : '#DC2626',
+                              }}
+                            >
+                              {isDealerActive ? '● Active' : '○ Deactivated'}
+                            </span>
+                          </div>
                         ) : (
                           <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>—</span>
+                        )}
+                      </td>
+
+                      <td>
+                        {u.role === 'dealer' ? (
+                          <div style={{ fontSize: 12 }}>
+                            <div>{u.city ? `${u.city} ${u.pincode ? `(${u.pincode})` : ''}` : 'No City/PIN'}</div>
+                            {hasCoordinates ? (
+                              <div style={{ fontSize: 11, color: '#16803D', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
+                                <Navigation size={11} /> {u.latitude?.toFixed(3)}, {u.longitude?.toFixed(3)}
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: 11, color: '#D97706', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
+                                <AlertTriangle size={11} /> No GPS Coords
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                            {u.addresses?.length ? `${u.addresses.length} address(es)` : '—'}
+                          </span>
                         )}
                       </td>
 
@@ -469,7 +646,7 @@ export function DealersPage() {
                           <button
                             type="button"
                             className="btn btn-secondary btn-sm"
-                            onClick={() => setSelectedUser(u)}
+                            onClick={() => handleSelectUser(u)}
                             style={{ padding: '4px 8px', fontSize: 12 }}
                           >
                             Details
@@ -495,7 +672,7 @@ export function DealersPage() {
                   {(selectedUser.role || 'CUSTOMER').toUpperCase()}
                 </span>
                 <h3 style={{ marginTop: 6 }}>
-                  {selectedUser.displayName || selectedUser.businessName || 'Account Profile'}
+                  {selectedUser.shopName || selectedUser.businessName || selectedUser.displayName || 'Account Profile'}
                 </h3>
                 <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontFamily: 'var(--font-mono)' }}>
                   UID: {selectedUser.uid}
@@ -512,7 +689,7 @@ export function DealersPage() {
             </div>
 
             <div style={{ padding: 20, overflowY: 'auto', flex: 1 }}>
-              {/* Dealer Approval Action Bar */}
+              {/* Dealer Status & Activation Control */}
               {selectedUser.role === 'dealer' && (
                 <div
                   style={{
@@ -527,24 +704,35 @@ export function DealersPage() {
                     marginBottom: 20,
                   }}
                 >
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 6 }}>
-                    TRADE DEALER STATUS
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 8 }}>
+                    TRADE DEALER STATUS & VISIBILITY
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                    <span
-                      className={`badge ${
-                        selectedUser.dealerStatus === 'approved'
-                          ? 'badge-success'
-                          : selectedUser.dealerStatus === 'pending'
-                          ? 'badge-warning'
-                          : 'badge-error'
-                      }`}
-                      style={{ fontSize: 13, padding: '4px 10px' }}
-                    >
-                      {(selectedUser.dealerStatus || 'PENDING').toUpperCase()}
-                    </span>
 
-                    <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span
+                        className={`badge ${
+                          selectedUser.dealerStatus === 'approved'
+                            ? 'badge-success'
+                            : selectedUser.dealerStatus === 'pending'
+                            ? 'badge-warning'
+                            : 'badge-error'
+                        }`}
+                        style={{ fontSize: 13, padding: '4px 10px' }}
+                      >
+                        {(selectedUser.dealerStatus || 'PENDING').toUpperCase()}
+                      </span>
+
+                      <span
+                        className={`badge ${selectedUser.isActive !== false ? 'badge-success' : 'badge-neutral'}`}
+                        style={{ fontSize: 12, padding: '4px 8px' }}
+                      >
+                        {selectedUser.isActive !== false ? 'ACTIVE' : 'DEACTIVATED'}
+                      </span>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       {selectedUser.dealerStatus !== 'approved' && (
                         <button
                           type="button"
@@ -566,50 +754,286 @@ export function DealersPage() {
                           Reject Application
                         </button>
                       )}
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+                        onClick={() => handleToggleActiveStatus(selectedUser.uid, selectedUser.isActive !== false)}
+                        disabled={actionInProgress}
+                      >
+                        <Power size={13} />
+                        {selectedUser.isActive !== false ? 'Deactivate Account' : 'Activate Account'}
+                      </button>
                     </div>
+                  </div>
+
+                  <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 8, lineHeight: 1.4 }}>
+                    {selectedUser.dealerStatus === 'approved' && selectedUser.isActive !== false ? (
+                      <span style={{ color: '#16803D' }}>
+                        ✓ Approved & Active: This dealer record is visible to customers in the mobile Dealer Locator.
+                      </span>
+                    ) : (
+                      <span style={{ color: '#D97706' }}>
+                        Notice: Unapproved or deactivated dealers are strictly excluded from the customer-side Dealer Locator.
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Profile Contact Information */}
-              <div
-                style={{
-                  padding: 16,
-                  borderRadius: 10,
-                  background: 'var(--color-surface-muted)',
-                  marginBottom: 20,
-                }}
-              >
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 10 }}>
-                  CONTACT INFORMATION
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
-                  <div>
-                    <span style={{ color: 'var(--color-text-secondary)' }}>Full Name: </span>
-                    <strong>{selectedUser.displayName || '—'}</strong>
+              {/* Dealer Shop Information & GPS Coordinates */}
+              {selectedUser.role === 'dealer' && (
+                <div
+                  style={{
+                    padding: 16,
+                    borderRadius: 10,
+                    background: 'var(--color-surface-muted)',
+                    marginBottom: 20,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>
+                      SHOP DETAILS & GEOGRAPHICAL COORDINATES
+                    </div>
+                    {!isEditingDealer && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setIsEditingDealer(true)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, padding: '4px 8px' }}
+                      >
+                        <Edit3 size={13} /> Edit Details
+                      </button>
+                    )}
                   </div>
-                  <div>
-                    <span style={{ color: 'var(--color-text-secondary)' }}>Email: </span>
-                    <strong>{selectedUser.email || '—'}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'var(--color-text-secondary)' }}>Phone: </span>
-                    <strong>{selectedUser.phone || '—'}</strong>
-                  </div>
-                  {selectedUser.businessName && (
-                    <div>
-                      <span style={{ color: 'var(--color-text-secondary)' }}>Business Name: </span>
-                      <strong>{selectedUser.businessName}</strong>
+
+                  {isEditingDealer ? (
+                    <form onSubmit={handleSaveDealerDetails}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 14 }}>
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Shop Name *</label>
+                          <input
+                            type="text"
+                            className="input"
+                            style={{ width: '100%', fontSize: 13 }}
+                            value={editForm.shopName}
+                            onChange={(e) => setEditForm({ ...editForm, shopName: e.target.value })}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Contact Person Name *</label>
+                          <input
+                            type="text"
+                            className="input"
+                            style={{ width: '100%', fontSize: 13 }}
+                            value={editForm.displayName}
+                            onChange={(e) => setEditForm({ ...editForm, displayName: e.target.value })}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Phone *</label>
+                          <input
+                            type="text"
+                            className="input"
+                            style={{ width: '100%', fontSize: 13 }}
+                            value={editForm.phone}
+                            onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>WhatsApp Number</label>
+                          <input
+                            type="text"
+                            className="input"
+                            style={{ width: '100%', fontSize: 13 }}
+                            value={editForm.whatsapp}
+                            onChange={(e) => setEditForm({ ...editForm, whatsapp: e.target.value })}
+                            placeholder="e.g. +91 98400 12345"
+                          />
+                        </div>
+
+                        <div style={{ gridColumn: '1 / -1' }}>
+                          <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Shop Address *</label>
+                          <input
+                            type="text"
+                            className="input"
+                            style={{ width: '100%', fontSize: 13 }}
+                            value={editForm.shopAddress}
+                            onChange={(e) => setEditForm({ ...editForm, shopAddress: e.target.value })}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>City *</label>
+                          <input
+                            type="text"
+                            className="input"
+                            style={{ width: '100%', fontSize: 13 }}
+                            value={editForm.city}
+                            onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                            placeholder="e.g. Chennai, Chengalpattu"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>PIN Code *</label>
+                          <input
+                            type="text"
+                            className="input"
+                            style={{ width: '100%', fontSize: 13 }}
+                            value={editForm.pincode}
+                            onChange={(e) => setEditForm({ ...editForm, pincode: e.target.value })}
+                            placeholder="6-digit PIN code"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Delivery Zone</label>
+                          <select
+                            className="input"
+                            style={{ width: '100%', fontSize: 13 }}
+                            value={editForm.zoneId}
+                            onChange={(e) => setEditForm({ ...editForm, zoneId: e.target.value })}
+                          >
+                            <option value="chennai">Chennai Zone</option>
+                            <option value="chengalpattu">Chengalpattu Zone</option>
+                            <option value="kanchipuram">Kanchipuram Zone</option>
+                            <option value="pondicherry">Pondicherry Zone</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Latitude (GPS)</label>
+                          <input
+                            type="text"
+                            className="input"
+                            style={{ width: '100%', fontSize: 13 }}
+                            value={editForm.latitude}
+                            onChange={(e) => setEditForm({ ...editForm, latitude: e.target.value })}
+                            placeholder="e.g. 12.9249"
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>Longitude (GPS)</label>
+                          <input
+                            type="text"
+                            className="input"
+                            style={{ width: '100%', fontSize: 13 }}
+                            value={editForm.longitude}
+                            onChange={(e) => setEditForm({ ...editForm, longitude: e.target.value })}
+                            placeholder="e.g. 80.1472"
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 12, lineHeight: 1.4 }}>
+                        * Coordinates are used for GPS distance calculation in the customer-facing locator. If exact coordinates are not known, leave them blank (do not invent coordinates).
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button type="submit" className="btn btn-primary btn-sm" disabled={actionInProgress}>
+                          Save Changes
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => setIsEditingDealer(false)}
+                          disabled={actionInProgress}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
+                      <div>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>Shop Name: </span>
+                        <strong>{selectedUser.shopName || selectedUser.businessName || '—'}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>Contact Person: </span>
+                        <strong>{selectedUser.displayName || '—'}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>Shop Address: </span>
+                        <strong>{selectedUser.shopAddress || '—'}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>City & PIN: </span>
+                        <strong>{selectedUser.city || '—'} {selectedUser.pincode ? `(${selectedUser.pincode})` : ''}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>Phone: </span>
+                        <strong>{selectedUser.phone || '—'}</strong>
+                      </div>
+                      {selectedUser.whatsapp && (
+                        <div>
+                          <span style={{ color: 'var(--color-text-secondary)' }}>WhatsApp: </span>
+                          <strong>{selectedUser.whatsapp}</strong>
+                        </div>
+                      )}
+                      {selectedUser.gstNumber && (
+                        <div>
+                          <span style={{ color: 'var(--color-text-secondary)' }}>GSTIN: </span>
+                          <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedUser.gstNumber}</strong>
+                        </div>
+                      )}
+                      <div style={{ paddingTop: 6, borderTop: '1px solid var(--color-border)', marginTop: 4 }}>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>Geographical Coordinates: </span>
+                        {typeof selectedUser.latitude === 'number' && typeof selectedUser.longitude === 'number' ? (
+                          <strong style={{ color: '#16803D' }}>
+                            📍 {selectedUser.latitude}, {selectedUser.longitude} (Proximity Enabled)
+                          </strong>
+                        ) : (
+                          <strong style={{ color: '#D97706' }}>
+                            ⚠️ Missing GPS Coordinates (Searchable by City & PIN Code only)
+                          </strong>
+                        )}
+                      </div>
                     </div>
                   )}
-                  {selectedUser.gstNumber && (
-                    <div>
-                      <span style={{ color: 'var(--color-text-secondary)' }}>GST Number: </span>
-                      <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedUser.gstNumber}</strong>
-                    </div>
-                  )}
                 </div>
-              </div>
+              )}
+
+              {/* Regular Customer Contact Information */}
+              {selectedUser.role !== 'dealer' && (
+                <div
+                  style={{
+                    padding: 16,
+                    borderRadius: 10,
+                    background: 'var(--color-surface-muted)',
+                    marginBottom: 20,
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 10 }}>
+                    CONTACT INFORMATION
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
+                    <div>
+                      <span style={{ color: 'var(--color-text-secondary)' }}>Full Name: </span>
+                      <strong>{selectedUser.displayName || '—'}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--color-text-secondary)' }}>Email: </span>
+                      <strong>{selectedUser.email || '—'}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--color-text-secondary)' }}>Phone: </span>
+                      <strong>{selectedUser.phone || '—'}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Role Management */}
               <div

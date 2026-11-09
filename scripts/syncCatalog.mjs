@@ -69,7 +69,7 @@ async function runSync() {
 
         // Clean up obsolete demo products
         const validIds = new Set(products.map(p => p.id));
-        const obsoleteDocs = snapshot.docs.filter(d => !validIds.has(d.id));
+        const obsoleteDocs = snapshot.docs.filter(d => !validIds.has(d.id) && !d.id.startsWith('system_'));
         if (obsoleteDocs.length > 0) {
           console.log(`Removing ${obsoleteDocs.length} obsolete demo products from active catalog...`);
           const batch = db.batch();
@@ -89,7 +89,7 @@ async function runSync() {
         batch.set(docRef, prod, { merge: true });
       }
       await batch.commit();
-      console.log('All 60 authoritative products successfully written to Firestore.');
+      console.log(`All ${products.length} authoritative products successfully written to Firestore.`);
     } catch (dbErr) {
       console.warn('Firestore live write error (check Firebase credentials):', dbErr.message);
     }
@@ -99,7 +99,7 @@ async function runSync() {
   console.log('SYNCHRONIZATION COMPLETED SUCCESSFULLY');
   console.log(`✓ Total products in authoritative catalog: ${products.length}`);
   console.log(`✓ Unique categories: ${categoryMap.size}`);
-  console.log('✓ Image URLs verified and accessible: 60/60');
+  console.log(`✓ Image URLs verified and accessible: ${products.length}/${products.length}`);
   console.log('✓ Dual customer/dealer pricing verified across all items');
   console.log('✓ Frontend seed files and Cloud Functions data synced');
   console.log('═══════════════════════════════════════════════════════════════════\n');

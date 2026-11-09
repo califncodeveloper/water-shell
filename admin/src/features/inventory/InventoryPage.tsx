@@ -99,7 +99,23 @@ export function InventoryPage() {
     const matchesCat =
       categoryFilter === 'all' ||
       p.categoryId === categoryFilter ||
-      (p.category && p.category.toLowerCase().includes(categoryFilter.toLowerCase()));
+      (p.category && p.category.toLowerCase() === (CATEGORY_DEFINITIONS[categoryFilter]?.name || '').toLowerCase()) ||
+      (categoryFilter === 'ro-water-purifiers' && (p.categoryId === 'water-purifiers' || (p.category && p.category.toLowerCase().includes('purifier')))) ||
+      (categoryFilter === 'water-dispensers' && (p.categoryId === 'water-dispensers' || (p.category && p.category.toLowerCase().includes('dispenser')))) ||
+      (categoryFilter === 'booster-pumps' && (p.categoryId === 'water-pumps' || (p.category && p.category.toLowerCase().includes('pump')))) ||
+      (categoryFilter === 'smps-power-units' && (p.categoryId === 'smps-power-units' || (p.name && p.name.includes('SMPS')))) ||
+      (categoryFilter === 'water-treatment-accessories-filters' && (
+        p.categoryId === 'water-treatment-accessories-filters' ||
+        p.categoryId === 'filters-cartridges' ||
+        p.categoryId === 'spare-parts-accessories' ||
+        p.categoryId === 'bottles-storage' ||
+        (p.category && (
+          p.category.toLowerCase().includes('filter') ||
+          p.category.toLowerCase().includes('spare') ||
+          p.category.toLowerCase().includes('accessories') ||
+          p.category.toLowerCase().includes('bottle')
+        ))
+      ));
 
     const q = search.trim().toLowerCase();
     const matchesSearch =

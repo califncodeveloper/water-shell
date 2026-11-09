@@ -88,6 +88,7 @@ export default function ProfileScreen() {
     refreshProfile,
     updateUserProfile,
   } = useAuthStore();
+  const isDealerUser = isDealer || profile?.role === 'dealer';
 
   // Edit Profile Modal State
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -138,7 +139,7 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out of AquaPure?', [
+    Alert.alert('Sign Out', 'Are you sure you want to sign out of Water Shell?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign Out',
@@ -147,7 +148,7 @@ export default function ProfileScreen() {
           await signOut();
           showToast({
             title: 'Signed Out',
-            message: 'You have been signed out of AquaPure.',
+            message: 'You have been signed out of Water Shell.',
             type: 'info',
           });
         },
@@ -155,7 +156,7 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const headerBg = isDark ? '#140A20' : colors.primary;
+  const headerBg = colors.headerBackground;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: headerBg }]} edges={['top']}>
@@ -196,7 +197,7 @@ export default function ProfileScreen() {
             <View style={styles.guestLogoWrap}>
               <AquaPureLogo width={100} />
             </View>
-            <Text style={[styles.guestTitle, { color: colors.text }]}>Welcome to AquaPure</Text>
+            <Text style={[styles.guestTitle, { color: colors.text }]}>Welcome to Water Shell</Text>
             <Text style={[styles.guestDesc, { color: colors.textSecondary }]}>
               Sign in to track orders, access wholesale pricing & schedule service visits
             </Text>
@@ -244,8 +245,58 @@ export default function ProfileScreen() {
                 <Ionicons name="briefcase-outline" size={18} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.dealerLinkTitle, { color: colors.text }]}>Become an AquaPure Dealer</Text>
+                <Text style={[styles.dealerLinkTitle, { color: colors.text }]}>Become a Water Shell Dealer</Text>
                 <Text style={[styles.dealerLinkSubtitle, { color: colors.textSecondary }]}>Apply for B2B wholesale catalog</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+            </TouchableOpacity>
+
+            {/* Helpline Directory Link */}
+            <TouchableOpacity
+              style={[
+                styles.serviceLinkCard,
+                {
+                  backgroundColor: isDark ? '#162238' : '#F0F9FF',
+                  borderColor: isDark ? '#23385D' : '#BAE6FD',
+                  marginTop: spacing.xs,
+                },
+              ]}
+              onPress={() => router.push('/helpline')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.serviceLinkIconWrap, { backgroundColor: colors.card }]}>
+                <Ionicons name="headset-outline" size={18} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.serviceLinkTitle, { color: colors.text }]}>Helpline & Branch Directory</Text>
+                <Text style={[styles.serviceLinkSubtitle, { color: colors.textSecondary }]}>
+                  Customer support & branch contact numbers
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+            </TouchableOpacity>
+
+            {/* Find Nearest Dealer Link (Guests / Retail Customers) */}
+            <TouchableOpacity
+              style={[
+                styles.serviceLinkCard,
+                {
+                  backgroundColor: isDark ? '#1A2333' : '#F1F5F9',
+                  borderColor: isDark ? '#2B3950' : '#CBD5E1',
+                  marginTop: spacing.xs,
+                },
+              ]}
+              onPress={() => router.push('/dealers')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.serviceLinkIconWrap, { backgroundColor: colors.card }]}>
+                <Ionicons name="storefront-outline" size={18} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.serviceLinkTitle, { color: colors.text }]}>Find Nearest Dealer</Text>
+                <Text style={[styles.serviceLinkSubtitle, { color: colors.textSecondary }]}>
+                  Locate authorized local dealers & store pickup
+                </Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={colors.primary} />
             </TouchableOpacity>
@@ -255,7 +306,7 @@ export default function ProfileScreen() {
           <>
             {/* Customer Profile Card */}
             <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={[styles.avatarLogged, { backgroundColor: isDark ? '#3B1A66' : colors.primary }]}>
+              <View style={[styles.avatarLogged, { backgroundColor: isDark ? '#222740' : colors.primary }]}>
                 <Text style={styles.avatarText}>
                   {(profile?.displayName || user?.email || 'U').charAt(0).toUpperCase()}
                 </Text>
@@ -264,21 +315,21 @@ export default function ProfileScreen() {
                   onPress={openEditModal}
                   accessibilityLabel="Edit profile photo"
                 >
-                  <Ionicons name="pencil" size={10} color="#210440" />
+                  <Ionicons name="pencil" size={10} color="#1B1F5E" />
                 </TouchableOpacity>
               </View>
 
               <View style={styles.profileInfo}>
                 <View style={styles.profileNameRow}>
                   <Text style={[styles.profileName, { color: colors.text }]} numberOfLines={1}>
-                    {profile?.displayName || 'AquaPure Member'}
+                    {profile?.displayName || 'Water Shell Member'}
                   </Text>
                   <TouchableOpacity
                     style={[
                       styles.editChip,
                       {
-                        backgroundColor: isDark ? '#26153B' : '#F3E8FF',
-                        borderColor: isDark ? '#402364' : '#D8B4FE',
+                        backgroundColor: isDark ? '#222740' : colors.primaryMuted,
+                        borderColor: isDark ? '#2B3252' : colors.border,
                       },
                     ]}
                     onPress={openEditModal}
@@ -493,32 +544,38 @@ export default function ProfileScreen() {
           <View style={[styles.menuCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <MenuItem
               icon="headset-outline"
-              label="Customer Support Helpline"
-              onPress={() => {
-                Alert.alert(
-                  'Customer Support',
-                  'Reach AquaPure Care at support@aquapure.com or call 1800-AQUAPURE (Mon-Sat 9AM-8PM).'
-                );
-              }}
+              label="Helpline & Branch Directory"
+              badge="Call Now"
+              badgeColor={colors.secondary}
+              onPress={() => router.push('/helpline')}
             />
+            {!isDealerUser && (
+              <MenuItem
+                icon="storefront-outline"
+                label="Find Nearest Dealer"
+                badge="Locator"
+                badgeColor={colors.primary}
+                onPress={() => router.push('/dealers')}
+              />
+            )}
             <MenuItem
               icon="shield-checkmark-outline"
               label="Privacy & Terms"
               onPress={() => {
                 Alert.alert(
                   'Privacy & Warranty Terms',
-                  'Your personal information is secure with AquaPure. All water purifiers and genuine parts include official manufacturer warranty.'
+                  'Your personal information is secure with Water Shell. All water purifiers and genuine parts include official manufacturer warranty.'
                 );
               }}
             />
             <MenuItem
               icon="information-circle-outline"
-              label="About AquaPure"
+              label="About Water Shell"
               badge="v1.0.0"
               badgeColor={colors.surfaceMuted}
               isLast
               onPress={() => {
-                Alert.alert('About AquaPure', 'AquaPure v1.0.0\nPure Water for a Healthier Tomorrow.');
+                Alert.alert('About Water Shell', 'Water Shell v1.0.0\nPure Water, Pure Life');
               }}
             />
           </View>
@@ -546,7 +603,7 @@ export default function ProfileScreen() {
         <View style={styles.profileBrandFooter}>
           <AquaPureLogo width={72} />
           <Text style={[styles.profileBrandFooterText, { color: colors.textSecondary }]}>
-            AquaPure Commerce • Pure Water. Better Living.
+            Water Shell • Pure Water, Pure Life
           </Text>
         </View>
       </ScrollView>
@@ -694,14 +751,14 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   signInBtn: {
-    backgroundColor: '#FFBA00',
+    backgroundColor: '#F5A623',
     paddingVertical: 12,
     borderRadius: radius.md,
     alignItems: 'center',
   },
   signInText: {
     ...typography.label,
-    color: '#210440',
+    color: '#1B1F5E',
     fontSize: 14,
     fontWeight: '700',
   },
@@ -930,7 +987,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemBadge: {
-    backgroundColor: '#FFBA00',
+    backgroundColor: '#F5A623',
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
@@ -939,7 +996,7 @@ const styles = StyleSheet.create({
   },
   itemBadgeText: {
     ...typography.labelSmall,
-    color: '#210440',
+    color: '#1B1F5E',
     fontSize: 10,
     fontWeight: '800',
   },

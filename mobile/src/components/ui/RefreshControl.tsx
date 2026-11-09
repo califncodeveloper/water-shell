@@ -43,7 +43,7 @@ export function AppRefreshControl({
       refreshing={refreshing}
       onRefresh={onRefresh}
       tintColor={tintColor ?? colors.primary}
-      colors={indicatorColors ?? [colors.primary, colors.peach]}
+      colors={indicatorColors ?? [colors.primary, colors.accent, colors.secondary]}
       progressBackgroundColor={progressBackgroundColor ?? colors.card}
       title={title}
       titleColor={titleColor ?? colors.textSecondary}

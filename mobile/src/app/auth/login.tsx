@@ -70,7 +70,7 @@ export default function LoginScreen() {
     if (res.success) {
       showToast({
         title: 'Login Successful',
-        message: 'Welcome back to AquaPure!',
+        message: 'Welcome back to Water Shell!',
         type: 'success',
       });
       const executed = executePendingAction(router);
@@ -196,7 +196,7 @@ export default function LoginScreen() {
           {/* Footers / Links */}
           <View style={styles.footer}>
             <View style={styles.signupRow}>
-              <Text style={styles.footerText}>New to AquaPure?</Text>
+              <Text style={styles.footerText}>New to Water Shell?</Text>
               <TouchableOpacity
                 onPress={() => router.push('/auth/register')}
                 hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
@@ -245,7 +245,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
 
     // Hero
     hero: {
-      backgroundColor: isDark ? '#1C1327' : '#210440',
+      backgroundColor: colors.headerBackground,
       paddingHorizontal: spacing.lg,
       paddingBottom: spacing['4xl'] + spacing.md, // room for card overlap
       borderBottomLeftRadius: 32,
@@ -330,7 +330,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
-      backgroundColor: isDark ? 'rgba(167, 139, 250, 0.15)' : '#EBF4FE',
+      backgroundColor: isDark ? 'rgba(115, 129, 240, 0.15)' : '#EEF0F9',
       padding: spacing.md,
       borderRadius: 12,
       marginBottom: spacing.md,

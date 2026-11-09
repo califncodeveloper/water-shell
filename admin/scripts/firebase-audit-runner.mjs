@@ -251,7 +251,7 @@ async function runAudit() {
     try {
       const bookingDoc = await addDoc(collection(db, 'service_bookings'), {
         userId: testUser.uid,
-        serviceType: 'installation',
+        serviceType: 'leakage',
         preferredDate: 'Tomorrow',
         preferredTime: 'Morning (09:00 AM - 12:00 PM)',
         address: {

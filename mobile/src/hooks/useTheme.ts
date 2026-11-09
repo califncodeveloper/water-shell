@@ -5,7 +5,6 @@
  */
 
 import { useMemo } from 'react';
-import { StyleSheet } from 'react-native';
 import { useThemeStore } from '@/stores/themeStore';
 import { ThemeColors } from '@/theme/colors';
 
@@ -32,6 +31,6 @@ export function useThemedStyles<T>(
   factory: (colors: ThemeColors, isDark: boolean) => T
 ): T {
   const { colors, isDark } = useTheme();
-  return useMemo(() => factory(colors, isDark), [colors, isDark]);
+  return useMemo(() => factory(colors, isDark), [factory, colors, isDark]);
 }
 

@@ -97,7 +97,7 @@ async function reverseGeocodeWebFallback(
     const osmRes = await fetch(osmUrl, {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'AquaPure-Commerce-App/1.0',
+        'User-Agent': 'WaterShell-Commerce-App/1.0',
       },
     });
     if (osmRes.ok) {
@@ -305,5 +305,9 @@ export const LocationService = {
         errorCode: 'UNAVAILABLE',
       };
     }
+  },
+
+  getCurrentCoordinates: async (): Promise<LocationServiceResult> => {
+    return LocationService.getCurrentDeliveryAddress();
   },
 };

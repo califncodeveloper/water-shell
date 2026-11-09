@@ -40,7 +40,7 @@ export const AquaPureLogo: React.FC<AquaPureLogoProps> = ({
   variant = 'badge',
   badgeText,
   className = '',
-  alt = 'AquaPure Logo',
+  alt = 'Water Shell Logo',
 }) => {
   const resolvedHeight = height ?? PRESET_HEIGHTS[size] ?? 40;
   const styleObj: React.CSSProperties = {
@@ -61,3 +61,6 @@ export const AquaPureLogo: React.FC<AquaPureLogoProps> = ({
     </div>
   );
 };
+
+export const WaterShellLogo = AquaPureLogo;
+

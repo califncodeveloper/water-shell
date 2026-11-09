@@ -64,7 +64,8 @@ class PricingService {
       if (isNaN(qty) || qty <= 0) {
         throw new Error(`Invalid quantity for product "${product.name}". Must be at least 1.`);
       }
-      if (qty > 100) {
+      const maxQty = isDealer ? 1000 : 100;
+      if (qty > maxQty) {
         throw new Error(`Maximum allowable single-order quantity exceeded for "${product.name}".`);
       }
 

@@ -33,6 +33,7 @@ import { CATEGORIES } from '@/data/seedProducts';
 import { useTheme, useThemedStyles, ThemeColors, spacing, radius, typography } from '@/theme';
 import { EmptyState, ErrorState, AppRefreshControl } from '@/components/ui';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useAuthStore } from '@/stores/authStore';
 
 const CARD_GAP = spacing.md;
 
@@ -46,6 +47,7 @@ export default function CategoriesScreen() {
   const { width: windowWidth } = useWindowDimensions();
   const cardWidth = Math.floor((windowWidth - spacing.lg * 2 - CARD_GAP) / 2);
   const params = useLocalSearchParams<{ category?: string }>();
+  const { isDealerApproved } = useAuthStore();
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
@@ -63,11 +65,11 @@ export default function CategoriesScreen() {
         (c) =>
           c.id.toLowerCase() === target ||
           c.name.toLowerCase() === target ||
-          (target === 'purifiers' && c.id === 'water-purifiers') ||
-          (target === 'dispensers' && c.id === 'water-dispensers') ||
-          (target === 'pumps' && c.id === 'water-pumps') ||
-          (target === 'filters' && c.id === 'filters-cartridges') ||
-          (target === 'spare-parts' && c.id === 'spare-parts-accessories')
+          ((target === 'purifiers' || target === 'water-purifiers' || target === 'ro-purifiers') && c.id === 'ro-water-purifiers') ||
+          ((target === 'dispensers') && c.id === 'water-dispensers') ||
+          ((target === 'pumps' || target === 'water-pumps') && c.id === 'booster-pumps') ||
+          ((target === 'smps' || target === 'power' || target === 'smps-units') && c.id === 'smps-power-units') ||
+          ((target === 'filters' || target === 'filters-cartridges' || target === 'spare-parts' || target === 'spare-parts-accessories' || target === 'bottles' || target === 'bottles-storage' || target === 'accessories') && c.id === 'water-treatment-accessories-filters')
       );
       if (validCategory) {
         setSelectedCategory(validCategory.id);
@@ -110,13 +112,14 @@ export default function CategoriesScreen() {
       const data = await ProductsService.getProducts({
         categoryId: selectedCategory === 'all' ? undefined : selectedCategory,
         search: searchQuery,
+        isDealer: isDealerApproved,
       });
       setProducts(data);
       setError(null);
     } catch (err) {
       setError('Failed to load products. Please try again.');
     }
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, isDealerApproved]);
 
   const { refreshing, onRefresh } = usePullToRefresh(fetchProducts);
 
@@ -129,6 +132,7 @@ export default function CategoriesScreen() {
         const data = await ProductsService.getProducts({
           categoryId: selectedCategory === 'all' ? undefined : selectedCategory,
           search: searchQuery,
+          isDealer: isDealerApproved,
         });
         if (isMounted) {
           setProducts(data);
@@ -146,7 +150,7 @@ export default function CategoriesScreen() {
       isMounted = false;
       clearTimeout(timer);
     };
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, isDealerApproved]);
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery('');
@@ -201,8 +205,20 @@ export default function CategoriesScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.title}>Product Catalog</Text>
-          <Text style={styles.subtitle}>Explore water purifiers, spares & filters</Text>
+          <View style={styles.headerTitleRow}>
+            <Text style={styles.title}>Product Catalog</Text>
+            {isDealerApproved && (
+              <View style={styles.dealerHeaderBadge}>
+                <Ionicons name="shield-checkmark" size={11} color="#065F46" />
+                <Text style={styles.dealerHeaderBadgeText}>Dealer Pricing</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.subtitle}>
+            {isDealerApproved
+              ? 'Wholesale B2B pricing active across all categories'
+              : 'Explore water purifiers, spares & filters'}
+          </Text>
         </View>
 
         {/* Search Bar */}
@@ -286,7 +302,7 @@ export default function CategoriesScreen() {
                   ]}
                   numberOfLines={1}
                 >
-                  {cat.name.replace('Water ', '').replace(' & Valves', '')}
+                  {cat.name}
                 </Text>
               </TouchableOpacity>
             );
@@ -351,7 +367,7 @@ export default function CategoriesScreen() {
           }
           renderItem={({ item }) => (
             <View style={[styles.cardWrapper, { width: cardWidth }]}>
-              <ProductCard product={item} />
+              <ProductCard product={item} isDealer={isDealerApproved} />
             </View>
           )}
         />
@@ -364,18 +380,39 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: isDark ? '#140A20' : colors.primary,
+      backgroundColor: colors.headerBackground,
     },
 
     // ── Header ──
     header: {
-      backgroundColor: isDark ? '#140A20' : colors.primary,
+      backgroundColor: colors.headerBackground,
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.md,
       paddingBottom: spacing.lg,
     },
     headerContent: {
       marginBottom: spacing.md,
+    },
+    headerTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      flexWrap: 'wrap',
+    },
+    dealerHeaderBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: '#D1FAE5',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: radius.full,
+    },
+    dealerHeaderBadgeText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: '#065F46',
+      letterSpacing: 0.3,
     },
     title: {
       ...typography.heading1,
@@ -390,13 +427,13 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     searchBar: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: isDark ? '#231733' : '#FFFFFF',
+      backgroundColor: colors.inputBackground,
       borderRadius: radius.md,
       paddingHorizontal: spacing.md,
       height: 44,
       gap: spacing.sm,
       borderWidth: 1,
-      borderColor: isDark ? '#3D2658' : colors.border,
+      borderColor: colors.border,
     },
     searchInput: {
       flex: 1,

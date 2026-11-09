@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "waterpurifiercommerce"
+    "default": "water-shell",
+    "legacy": "waterpurifiercommerce"
   }
 }

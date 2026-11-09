@@ -1,8 +1,9 @@
 /**
- * AquaPure — App Splash Screen Component
+ * Water Shell — App Splash Screen Component
  *
- * Full-screen branded splash view maintaining exact 3:2 aspect ratio,
- * ensuring zero cropping, distortion, or squishing across all phone and tablet sizes.
+ * Full-screen branded splash view featuring the official leaf-droplet emblem,
+ * "Water SHELL" wordmark, and "Pure Water, Pure Life" tagline.
+ * Maintains exact 3:2 aspect ratio for zero cropping or distortion.
  */
 
 import React from 'react';
@@ -14,7 +15,7 @@ import {
   Dimensions,
   SafeAreaView,
 } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useTheme } from '@/theme';
 import { spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 import { AquaPureLogo } from './AquaPureLogo';
@@ -30,25 +31,41 @@ export function AppSplashScreen({
   message = 'Loading pure water experience…',
   showSpinner = true,
 }: AppSplashScreenProps) {
-  // Dynamically size logo cleanly for all screen sizes
-  const logoWidth = Math.min(Math.round(SCREEN_WIDTH * 0.48), 180);
+  const { colors, isDark } = useTheme();
+
+  // Dynamically size logo cleanly for all screen sizes while preserving 1.5 aspect ratio
+  const logoWidth = Math.min(Math.round(SCREEN_WIDTH * 0.52), 220);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={styles.container}>
-        <View style={styles.logoCard}>
+        <View
+          style={[
+            styles.logoCard,
+            {
+              backgroundColor: '#FFFFFF',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : colors.border,
+            },
+          ]}
+        >
           <AquaPureLogo width={logoWidth} />
         </View>
 
         {showSpinner && (
           <View style={styles.spinnerWrap}>
             <ActivityIndicator size="small" color={colors.primary} />
-            {message ? <Text style={styles.message}>{message}</Text> : null}
+            {message ? (
+              <Text style={[styles.message, { color: colors.textSecondary }]}>
+                {message}
+              </Text>
+            ) : null}
           </View>
         )}
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>AquaPure Technologies • Certified Water Solutions</Text>
+          <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+            Water Shell • Pure Water, Pure Life
+          </Text>
         </View>
       </View>
     </SafeAreaView>
@@ -58,7 +75,6 @@ export function AppSplashScreen({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
@@ -69,6 +85,15 @@ const styles = StyleSheet.create({
   logoCard: {
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 24,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+    borderWidth: 1,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.10,
+    shadowRadius: 16,
+    elevation: 4,
     marginBottom: spacing['2xl'],
   },
   spinnerWrap: {
@@ -79,7 +104,6 @@ const styles = StyleSheet.create({
   },
   message: {
     ...typography.bodySmall,
-    color: colors.textSecondary,
     fontSize: 13,
     textAlign: 'center',
   },
@@ -90,8 +114,9 @@ const styles = StyleSheet.create({
   },
   footerText: {
     ...typography.labelSmall,
-    color: colors.textSecondary,
-    fontSize: 11,
-    opacity: 0.7,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    opacity: 0.8,
   },
 });

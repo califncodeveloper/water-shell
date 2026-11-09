@@ -123,6 +123,14 @@ WaterPurifierCommerce/
 │   ├── .env.example              # Admin environment template
 │   ├── package.json
 │   └── vite.config.ts
+├── portfolio/                    # Showcase Website & Web Portal (React 19 + Vite + Lenis)
+│   ├── src/
+│   │   ├── pages/                # Showcase pages (Home, Products, Tech, Why Us, Support)
+│   │   ├── sections/             # Interactive hero, brand highlights, showcase modules
+│   │   ├── providers/            # SmoothScrollProvider (Lenis smooth scrolling)
+│   │   └── components/           # Responsive modals, navbar, footer, cards
+│   ├── package.json
+│   └── vite.config.ts
 ├── mobile/                       # Cross-Platform Mobile Client (Expo SDK 53)
 │   ├── src/
 │   │   ├── app/                  # File-based routing (tabs, auth, checkout, product, orders)
@@ -293,6 +301,16 @@ To run local Firestore and Cloud Functions emulators:
 ```bash
 npm run serve:functions
 ```
+
+### 5. Showcase Website (Portfolio)
+To run the interactive AquaPure / Water Shell brand showcase portal:
+```bash
+cd portfolio
+npm run dev
+# Or from root:
+npm run build:portfolio
+```
+Runs locally at `http://localhost:5173`.
 
 ---
 

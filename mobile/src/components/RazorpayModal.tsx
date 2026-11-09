@@ -325,7 +325,7 @@ export function RazorpayModal({
                   accessibilityRole="button"
                 >
                   <Text style={styles.payBtnText}>Pay {formattedAmount}</Text>
-                  <Ionicons name="arrow-forward" size={16} color={isDark ? '#210440' : colors.white} />
+                  <Ionicons name="arrow-forward" size={16} color={colors.rawWhite} />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -637,7 +637,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
   },
   disclaimerBox: {
     flexDirection: 'row',
-    backgroundColor: isDark ? 'rgba(255, 186, 0, 0.15)' : '#FFFBEB',
+    backgroundColor: isDark ? 'rgba(245, 166, 35, 0.15)' : '#FFFBEB',
     padding: spacing.sm,
     borderRadius: radius.md,
     gap: spacing.xs,
@@ -646,7 +646,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
   },
   disclaimerText: {
     fontSize: 11,
-    color: isDark ? colors.yellow : '#92400E',
+    color: isDark ? colors.accent : '#92400E',
     flex: 1,
     lineHeight: 15,
   },
@@ -666,7 +666,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     gap: spacing.xs,
   },
   payBtnText: {
-    color: isDark ? '#210440' : colors.white,
+    color: colors.rawWhite,
     fontSize: 15,
     fontWeight: '700',
   },

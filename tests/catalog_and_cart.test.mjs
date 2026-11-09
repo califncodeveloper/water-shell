@@ -17,15 +17,16 @@ describe('AquaPure Seed Catalog Validation', () => {
     );
   });
 
-  test('All 6 specified categories must be populated with products', () => {
+  test('All 5 specified categories must be populated with products and no unwanted categories exist', () => {
     const requiredCategories = [
-      'water-purifiers',
+      'ro-water-purifiers',
       'water-dispensers',
-      'water-pumps',
-      'filters-cartridges',
-      'spare-parts-accessories',
-      'bottles-storage',
+      'booster-pumps',
+      'smps-power-units',
+      'water-treatment-accessories-filters',
     ];
+
+    assert.equal(CATEGORIES.length, 5, `Expected exactly 5 categories, got ${CATEGORIES.length}`);
 
     for (const cat of requiredCategories) {
       const items = SEED_PRODUCTS.filter((p) => p.categoryId === cat);

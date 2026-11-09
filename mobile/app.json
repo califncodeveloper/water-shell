@@ -1,17 +1,22 @@
 {
   "expo": {
-    "name": "AquaPure",
-    "slug": "aquapure",
+    "name": "Water Shell",
+    "slug": "water-shell",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "aquapure",
+    "scheme": "watershell",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/icon.png"
+      "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "com.watershell.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "CFBundleDisplayName": "Water Shell"
+      }
     },
     "android": {
-      "package": "com.waterpurifier.aquapure",
+      "package": "com.watershell.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
@@ -43,16 +48,18 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow AquaPure to use your current location to deliver your water purifiers and spare parts."
+          "locationAlwaysAndWhenInUsePermission": "Allow Water Shell to use your current location to deliver your water purifiers and spare parts."
         }
       ],
       [
         "expo-notifications",
         {
           "icon": "./assets/images/android-icon-monochrome.png",
-          "color": "#00B4D8"
+          "color": "#1B1F5E"
         }
-      ]
+      ],
+      "expo-image",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -60,9 +67,7 @@
     },
     "extra": {
       "router": {
-        "asyncRoutes": {
-          "web": true
-        }
+        "asyncRoutes": false
       },
       "eas": {
         "projectId": "42cf3428-af59-41ba-8f16-3e5cbbd3b857"

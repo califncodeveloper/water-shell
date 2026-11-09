@@ -234,7 +234,7 @@ describe('2. Buy Now vs Shopping Cart Isolation', () => {
     const checkout = createCheckoutStore(cart);
 
     // Step A: User previously added 2 Sediment Filters to their cart
-    const filterProduct = SEED_PRODUCTS.find((p) => p.categoryId === 'filters-cartridges');
+    const filterProduct = SEED_PRODUCTS.find((p) => p.categoryId === 'water-treatment-accessories-filters' || p.categoryId === 'filters-cartridges');
     assert.ok(filterProduct);
     cart.addItem(filterProduct, 2, false);
 
@@ -242,7 +242,7 @@ describe('2. Buy Now vs Shopping Cart Isolation', () => {
     assert.equal(cart.getState().items[0].productId, filterProduct.id);
 
     // Step B: User navigates to a Water Purifier and clicks "Buy Now"
-    const purifierProduct = SEED_PRODUCTS.find((p) => p.categoryId === 'water-purifiers');
+    const purifierProduct = SEED_PRODUCTS.find((p) => p.categoryId === 'ro-water-purifiers' || p.categoryId === 'water-purifiers');
     assert.ok(purifierProduct);
 
     // Simulation of user choosing "Purchase This Product Alone"
@@ -275,11 +275,11 @@ describe('2. Buy Now vs Shopping Cart Isolation', () => {
     const checkout = createCheckoutStore(cart);
 
     // Add filter to cart
-    const filterProduct = SEED_PRODUCTS.find((p) => p.categoryId === 'filters-cartridges');
+    const filterProduct = SEED_PRODUCTS.find((p) => p.categoryId === 'water-treatment-accessories-filters' || p.categoryId === 'filters-cartridges');
     cart.addItem(filterProduct, 1, false);
 
     // Buy purifier alone
-    const purifierProduct = SEED_PRODUCTS.find((p) => p.categoryId === 'water-purifiers');
+    const purifierProduct = SEED_PRODUCTS.find((p) => p.categoryId === 'ro-water-purifiers' || p.categoryId === 'water-purifiers');
     checkout.initCheckout(
       [
         {
@@ -317,7 +317,7 @@ describe('2. Buy Now vs Shopping Cart Isolation', () => {
     const cart = createCartStore();
     const checkout = createCheckoutStore(cart);
 
-    const filterProduct = SEED_PRODUCTS.find((p) => p.categoryId === 'filters-cartridges');
+    const filterProduct = SEED_PRODUCTS.find((p) => p.categoryId === 'water-treatment-accessories-filters' || p.categoryId === 'filters-cartridges');
     cart.addItem(filterProduct, 2, false);
 
     checkout.initCheckout(cart.getState().items, 'cart');
@@ -339,7 +339,7 @@ describe('2. Buy Now vs Shopping Cart Isolation', () => {
 
   test('Buy Now "Review Cart" option correctly adds product to cart and reviews cart', () => {
     const cart = createCartStore();
-    const purifierProduct = SEED_PRODUCTS.find((p) => p.categoryId === 'water-purifiers');
+    const purifierProduct = SEED_PRODUCTS.find((p) => p.categoryId === 'ro-water-purifiers' || p.categoryId === 'water-purifiers');
 
     // User chooses "Review Cart With All Items"
     cart.addItem(purifierProduct, 1, false);

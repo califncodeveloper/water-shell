@@ -12,7 +12,9 @@ import { OrdersPage } from './features/orders/OrdersPage';
 import { DealersPage, AccountsPage } from './features/dealers/DealersPage';
 import { ServicePage } from './features/service/ServicePage';
 import { ReportsPage } from './features/reports/ReportsPage';
+import { DeliveryZonesPage } from './features/delivery/DeliveryZonesPage';
 import { LoginPage } from './features/auth/LoginPage';
+import { SmoothScrollProvider } from './components/SmoothScrollProvider';
 import './features/auth/LoginPage.css';
 import './index.css';
 
@@ -27,13 +29,13 @@ function ProtectedRoutes() {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '100vh',
-          background: 'var(--color-background, #FFF4F0)',
+          background: 'var(--color-background, #F8FAFC)',
           color: 'var(--color-text-secondary)',
           fontSize: 15,
           fontWeight: 600,
         }}
       >
-        Authenticating AquaPure Administrator...
+        Authenticating Water Shell Administrator...
       </div>
     );
   }
@@ -49,6 +51,7 @@ function ProtectedRoutes() {
         <Route path="products" element={<ProductsPage />} />
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="orders" element={<OrdersPage />} />
+        <Route path="delivery-zones" element={<DeliveryZonesPage />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="dealers" element={<DealersPage />} />
         <Route path="service" element={<ServicePage />} />
@@ -63,7 +66,9 @@ function App() {
   return (
     <AdminAuthProvider>
       <BrowserRouter>
-        <ProtectedRoutes />
+        <SmoothScrollProvider>
+          <ProtectedRoutes />
+        </SmoothScrollProvider>
       </BrowserRouter>
     </AdminAuthProvider>
   );

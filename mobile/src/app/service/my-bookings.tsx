@@ -28,7 +28,12 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { EmptyState, AppRefreshControl } from '@/components/ui';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
-const SERVICE_TITLES: Record<ServiceType, string> = {
+const SERVICE_TITLES: Record<string, string> = {
+  leakage: 'Leakage',
+  low_flow: 'Low Flow',
+  filter_change: 'Filter Change',
+  general_service: 'General Service',
+  // Preserved history mappings
   installation: 'New Purifier Installation',
   filter_replacement: 'Filter & Membrane Replacement',
   repair: 'Breakdown / Leakage Repair',
@@ -36,7 +41,12 @@ const SERVICE_TITLES: Record<ServiceType, string> = {
   general_inquiry: 'Water Quality & TDS Health Check',
 };
 
-const SERVICE_ICONS: Record<ServiceType, React.ComponentProps<typeof Ionicons>['name']> = {
+const SERVICE_ICONS: Record<string, React.ComponentProps<typeof Ionicons>['name']> = {
+  leakage: 'water-outline',
+  low_flow: 'speedometer-outline',
+  filter_change: 'refresh-circle-outline',
+  general_service: 'shield-checkmark-outline',
+  // Preserved history mappings
   installation: 'construct-outline',
   filter_replacement: 'refresh-circle-outline',
   repair: 'alert-circle-outline',
@@ -49,20 +59,22 @@ const DEMO_BOOKINGS: ServiceBooking[] = [
   {
     id: 'SRV-892104',
     userId: 'demo-user',
-    serviceType: 'installation',
+    serviceType: 'leakage',
     address: {
       id: 'addr-demo-1',
       label: 'Home',
       fullName: 'Rahul Sharma',
       phone: '+91 98765 43210',
-      addressLine1: 'Flat 402, Royal Palms, Link Road',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      pincode: '400053',
+      addressLine1: 'Flat 402, Anna Nagar West',
+      city: 'Chennai',
+      state: 'Tamil Nadu',
+      pincode: '600040',
     },
+    deliveryZone: 'Chennai Zone',
+    baseOrigin: 'Tambaram Main Branch',
     preferredDate: 'Tomorrow',
     preferredTime: 'Morning (09:00 AM - 12:00 PM)',
-    notes: 'Please bring an extra inlet adapter valve.',
+    notes: 'Inlet pipe connector joint dripping water.',
     status: 'confirmed',
     createdAt: '2026-02-21T10:00:00Z',
     updatedAt: '2026-02-21T10:30:00Z',
@@ -70,19 +82,22 @@ const DEMO_BOOKINGS: ServiceBooking[] = [
   {
     id: 'SRV-761298',
     userId: 'demo-user',
-    serviceType: 'maintenance',
+    serviceType: 'general_service',
     address: {
-      id: 'addr-demo-1',
+      id: 'addr-demo-2',
       label: 'Home',
       fullName: 'Rahul Sharma',
       phone: '+91 98765 43210',
-      addressLine1: 'Flat 402, Royal Palms, Link Road',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      pincode: '400053',
+      addressLine1: 'No 15, GST Road, Chromepet',
+      city: 'Chengalpattu',
+      state: 'Tamil Nadu',
+      pincode: '600044',
     },
+    deliveryZone: 'Chengalpattu Zone',
+    baseOrigin: 'Tambaram Main Branch',
     preferredDate: '25 Feb 2026',
     preferredTime: 'Afternoon (12:00 PM - 03:00 PM)',
+    notes: 'Routine water purifier maintenance and TDS health check.',
     status: 'requested',
     createdAt: '2026-02-20T14:15:00Z',
     updatedAt: '2026-02-20T14:15:00Z',
@@ -337,6 +352,11 @@ export default function MyBookingsScreen() {
                   <View style={styles.addressHeader}>
                     <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
                     <Text style={styles.addressTitle}>Service Location</Text>
+                    {booking.deliveryZone ? (
+                      <View style={styles.zoneBadge}>
+                        <Text style={styles.zoneBadgeText}>📍 {booking.deliveryZone}</Text>
+                      </View>
+                    ) : null}
                   </View>
                   <Text style={styles.addressRecipient}>
                     {booking.address.fullName} • {booking.address.phone}
@@ -360,15 +380,12 @@ export default function MyBookingsScreen() {
                 <View style={styles.actionsBar}>
                   <TouchableOpacity
                     style={styles.supportBtn}
-                    onPress={() =>
-                      Alert.alert(
-                        'Technician Helpline',
-                        `For booking ${booking.id}, call our support desk at 1800-AQUAPURE or email service@aquapure.com`
-                      )
-                    }
+                    onPress={() => router.push('/helpline')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open Helpline Directory"
                   >
                     <Ionicons name="call-outline" size={16} color={colors.primary} />
-                    <Text style={styles.supportBtnText}>Help / Support</Text>
+                    <Text style={styles.supportBtnText}>Helpline Directory</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -427,7 +444,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
     bookNewText: {
       ...typography.label,
-      color: '#210440',
+      color: '#1B1F5E',
       fontWeight: '700',
       fontSize: 12,
     },
@@ -449,7 +466,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       color: colors.white,
     },
     filterTabTextActive: {
-      color: '#210440',
+      color: '#1B1F5E',
       fontWeight: '700',
     },
     scrollView: {
@@ -554,7 +571,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     addressHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 4,
+      gap: 6,
       marginBottom: 2,
     },
     addressTitle: {
@@ -563,6 +580,18 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       fontSize: 11,
       fontWeight: '700',
       textTransform: 'uppercase',
+    },
+    zoneBadge: {
+      backgroundColor: 'rgba(109, 40, 217, 0.1)',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    zoneBadgeText: {
+      ...typography.labelSmall,
+      color: '#6D28D9',
+      fontSize: 10,
+      fontWeight: '700',
     },
     addressRecipient: {
       ...typography.bodySmall,

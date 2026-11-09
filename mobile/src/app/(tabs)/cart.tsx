@@ -24,6 +24,7 @@ import {
   Alert,
   Animated,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,6 +38,8 @@ import { EmptyState, AppRefreshControl } from '@/components/ui';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { ProductsService } from '@/services/productsService';
 import { CartItem } from '@/types';
+import { DeliveryService } from '@/services/deliveryService';
+import { DealerLocatorModal } from '@/components/DealerLocatorModal';
 
 export default function CartScreen() {
   const { colors, isDark } = useTheme();
@@ -54,8 +57,10 @@ export default function CartScreen() {
     syncDealerPrices,
   } = useCartStore();
 
-  const { user, isDealerApproved, setPendingAction } = useAuthStore();
+  const { user, isDealer, isDealerApproved, profile, setPendingAction } = useAuthStore();
+  const isDealerUser = isDealer || profile?.role === 'dealer';
   const [validating, setValidating] = useState(false);
+  const [dealerModalVisible, setDealerModalVisible] = useState(false);
 
   // Undo removal state
   const [recentlyRemoved, setRecentlyRemoved] = useState<{
@@ -75,6 +80,7 @@ export default function CartScreen() {
   const subtotal = getSubtotal();
   const shipping = getShippingFee();
   const total = getTotal();
+  const fulfillment = DeliveryService.analyzeFulfillment(items);
 
   // Free delivery threshold (₹999)
   const FREE_SHIPPING_THRESHOLD = 999;
@@ -139,7 +145,9 @@ export default function CartScreen() {
     const item = items.find((i) => i.product.id === productId);
     if (!item) return;
 
-    const maxLimit = item.maxQuantity || (item.product.stockStatus === 'limited' ? 5 : 10);
+    const maxLimit = isDealerApproved
+      ? 500
+      : (item.maxQuantity || (item.product.stockStatus === 'limited' ? 5 : 10));
     const newQty = currentQty + change;
 
     if (newQty <= 0) {
@@ -264,7 +272,7 @@ export default function CartScreen() {
     }
   };
 
-  const headerBg = isDark ? '#140A20' : colors.primary;
+  const headerBg = colors.headerBackground;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: headerBg }]} edges={['top']}>
@@ -338,31 +346,82 @@ export default function CartScreen() {
             )}
 
             {/* Free Shipping Progress Indicator */}
-            <View style={styles.shippingThresholdCard}>
-              <View style={styles.shippingThresholdHeader}>
-                <Ionicons
-                  name={shipping === 0 ? 'checkmark-circle' : 'car-outline'}
-                  size={18}
-                  color={shipping === 0 ? colors.success : colors.primary}
-                />
-                <Text style={styles.shippingThresholdTitle}>
-                  {shipping === 0
-                    ? 'You have unlocked FREE Delivery!'
-                    : `Add ${formatPrice(amountToFreeShipping)} more for FREE Delivery`}
+            {fulfillment.hasMachines && (
+              <View style={styles.shippingThresholdCard}>
+                <View style={styles.shippingThresholdHeader}>
+                  <Ionicons
+                    name={shipping === 0 ? 'checkmark-circle' : 'car-outline'}
+                    size={18}
+                    color={shipping === 0 ? colors.success : colors.primary}
+                  />
+                  <Text style={styles.shippingThresholdTitle}>
+                    {shipping === 0
+                      ? 'You have unlocked FREE Delivery from Tambaram Hub!'
+                      : `Add ${formatPrice(amountToFreeShipping)} more machines for FREE Delivery`}
+                  </Text>
+                </View>
+                <View style={styles.progressBarTrack}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        width: `${Math.round(freeShippingProgress * 100)}%`,
+                        backgroundColor: shipping === 0 ? colors.success : colors.yellow,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            )}
+
+            {/* Fulfillment Policy Banner: Mixed or Accessories */}
+            {fulfillment.isMixedCart ? (
+              <View style={styles.fulfillmentBannerMixed}>
+                <View style={styles.fulfillmentBannerHeader}>
+                  <Ionicons name="git-branch" size={16} color={colors.primary} />
+                  <Text style={styles.fulfillmentBannerTitle}>
+                    {isDealerUser ? 'Wholesale Mixed Order Dispatch' : 'Mixed Delivery & Dealer Service'}
+                  </Text>
+                </View>
+                <Text style={styles.fulfillmentBannerText}>
+                  {isDealerUser
+                    ? `Machines (${fulfillment.directDeliveryCount}) and accessories (${fulfillment.dealerServiceCount}) will be dispatched directly to your registered dealership address.`
+                    : `Machines (${fulfillment.directDeliveryCount}) are directly delivered from Tambaram Main Branch within supported zones. Accessories (${fulfillment.dealerServiceCount}) will be coordinated with your authorized local dealer.`}
                 </Text>
+                {!isDealerUser && (
+                  <TouchableOpacity
+                    style={styles.fulfillmentDealerLink}
+                    onPress={() => setDealerModalVisible(true)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.fulfillmentDealerLinkText}>View Authorized Local Dealers →</Text>
+                  </TouchableOpacity>
+                )}
               </View>
-              <View style={styles.progressBarTrack}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    {
-                      width: `${Math.round(freeShippingProgress * 100)}%`,
-                      backgroundColor: shipping === 0 ? colors.success : colors.yellow,
-                    },
-                  ]}
-                />
+            ) : fulfillment.hasAccessories ? (
+              <View style={styles.fulfillmentBannerDealer}>
+                <View style={styles.fulfillmentBannerHeader}>
+                  <Ionicons name="storefront" size={16} color={colors.coral} />
+                  <Text style={styles.fulfillmentBannerTitleDealer}>
+                    {isDealerUser ? 'Wholesale Dealer Fulfillment' : 'Local Dealer Serviced Order'}
+                  </Text>
+                </View>
+                <Text style={styles.fulfillmentBannerText}>
+                  {isDealerUser
+                    ? 'Wholesale spare parts, cartridges, and accessories are dispatched directly to your registered dealership address.'
+                    : 'Accessories and spare parts are fulfilled and serviced through our authorized local dealer network. Direct courier delivery is not offered for accessories.'}
+                </Text>
+                {!isDealerUser && (
+                  <TouchableOpacity
+                    style={styles.fulfillmentDealerLink}
+                    onPress={() => setDealerModalVisible(true)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.fulfillmentDealerLinkText}>Find Nearest Local Dealer →</Text>
+                  </TouchableOpacity>
+                )}
               </View>
-            </View>
+            ) : null}
 
             {/* Cart Items List */}
             <View style={styles.itemsList}>
@@ -370,6 +429,7 @@ export default function CartScreen() {
                 if (!product) return null;
                 const maxStock = maxQuantity || (product.stockStatus === 'limited' ? 5 : 10);
                 const isAtMax = quantity >= maxStock;
+                const isMachineItem = DeliveryService.isMachineProduct(product);
 
                 return (
                   <View key={product.id} style={styles.cartCard}>
@@ -402,6 +462,23 @@ export default function CartScreen() {
                         )}
                       </View>
 
+                      {/* Delivery Rule Badge */}
+                      <View style={styles.itemFulfillmentRow}>
+                        {isMachineItem ? (
+                          <View style={styles.itemBadgeDirect}>
+                            <Ionicons name="flash" size={10} color={colors.primary} />
+                            <Text style={styles.itemBadgeDirectText}>Direct Delivery • Tambaram Hub</Text>
+                          </View>
+                        ) : (
+                          <View style={styles.itemBadgeDealer}>
+                            <Ionicons name="storefront" size={10} color={colors.coral} />
+                            <Text style={styles.itemBadgeDealerText}>
+                              {isDealerUser ? 'Wholesale Spares' : 'Local Dealer Service Only'}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+
                       {/* Product Title */}
                       <TouchableOpacity
                         onPress={() => router.push(`/product/${product.id}`)}
@@ -419,7 +496,7 @@ export default function CartScreen() {
 
                       {/* Actions: Stepper, Price & Remove */}
                       <View style={styles.actionRow}>
-                        {/* Stepper with accessible controls */}
+                        {/* Stepper with accessible controls (Direct numeric input for approved dealers) */}
                         <View style={styles.stepper}>
                           <TouchableOpacity
                             style={styles.stepperBtn}
@@ -435,9 +512,31 @@ export default function CartScreen() {
                             />
                           </TouchableOpacity>
 
-                          <View style={styles.stepperValueContainer}>
-                            <Text style={styles.stepperText}>{quantity}</Text>
-                          </View>
+                          {isDealerApproved ? (
+                            <TextInput
+                              style={[
+                                styles.stepperNumericInput,
+                                { color: colors.text, backgroundColor: isDark ? '#1C1528' : '#F8FAFC' },
+                              ]}
+                              value={String(quantity)}
+                              onChangeText={(text) => {
+                                const cleaned = text.replace(/[^0-9]/g, '');
+                                if (!cleaned) {
+                                  updateQuantity(product.id, 1);
+                                } else {
+                                  const val = parseInt(cleaned, 10);
+                                  updateQuantity(product.id, Math.min(maxStock, Math.max(1, val)));
+                                }
+                              }}
+                              keyboardType="number-pad"
+                              selectTextOnFocus
+                              accessibilityLabel={`Quantity for ${product.name}`}
+                            />
+                          ) : (
+                            <View style={styles.stepperValueContainer}>
+                              <Text style={styles.stepperText}>{quantity}</Text>
+                            </View>
+                          )}
 
                           <TouchableOpacity
                             style={[styles.stepperBtn, isAtMax && styles.stepperBtnDisabled]}
@@ -469,6 +568,37 @@ export default function CartScreen() {
                           <Ionicons name="trash-outline" size={19} color={colors.error} />
                         </TouchableOpacity>
                       </View>
+
+                      {/* Quick Bulk Selection Buttons for Approved Dealers (5, 10, 25, 50+) */}
+                      {isDealerApproved && (
+                        <View style={styles.cartQuickBulkRow}>
+                          <Text style={styles.cartQuickBulkLabel}>Bulk:</Text>
+                          {[5, 10, 25, 50].map((tier) => {
+                            const isSelected = tier === 50 ? quantity >= 50 : quantity === tier;
+                            return (
+                              <TouchableOpacity
+                                key={tier}
+                                style={[
+                                  styles.cartQuickBulkBtn,
+                                  isSelected && styles.cartQuickBulkBtnActive,
+                                ]}
+                                onPress={() => updateQuantity(product.id, tier)}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Set quantity to ${tier === 50 ? '50 plus' : tier}`}
+                              >
+                                <Text
+                                  style={[
+                                    styles.cartQuickBulkText,
+                                    isSelected && styles.cartQuickBulkTextActive,
+                                  ]}
+                                >
+                                  {tier === 50 ? '50+' : `${tier}`}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      )}
                     </View>
                   </View>
                 );
@@ -608,16 +738,24 @@ export default function CartScreen() {
               accessibilityRole="button"
             >
               {validating ? (
-                <ActivityIndicator size="small" color="#210440" />
+                <ActivityIndicator size="small" color="#1B1F5E" />
               ) : (
                 <>
                   <Text style={styles.checkoutBtnText}>Proceed to Checkout</Text>
-                  <Ionicons name="arrow-forward" size={18} color="#210440" />
+                  <Ionicons name="arrow-forward" size={18} color="#1B1F5E" />
                 </>
               )}
             </TouchableOpacity>
           </View>
         </View>
+      )}
+      {/* ── Dealer Locator Modal (Customers Only) ── */}
+      {!isDealerUser && (
+        <DealerLocatorModal
+          visible={dealerModalVisible}
+          onClose={() => setDealerModalVisible(false)}
+          sourceContext="cart"
+        />
       )}
     </SafeAreaView>
   );
@@ -627,10 +765,10 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: isDark ? '#140A20' : colors.primary,
+      backgroundColor: colors.headerBackground,
     },
     header: {
-      backgroundColor: isDark ? '#140A20' : colors.primary,
+      backgroundColor: colors.headerBackground,
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.sm,
       paddingBottom: spacing.md,
@@ -656,7 +794,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
     itemCountBadgeText: {
       ...typography.labelSmall,
-      color: '#210440',
+      color: '#1B1F5E',
       fontWeight: '800',
       fontSize: 12,
     },
@@ -854,6 +992,54 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       color: colors.text,
       fontWeight: '700',
     },
+    stepperNumericInput: {
+      ...typography.label,
+      fontSize: 13,
+      fontWeight: '700',
+      width: 44,
+      height: 32,
+      textAlign: 'center',
+      borderLeftWidth: 1,
+      borderRightWidth: 1,
+      borderColor: colors.border,
+      padding: 0,
+    },
+    cartQuickBulkRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: 8,
+      paddingTop: 6,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+    },
+    cartQuickBulkLabel: {
+      ...typography.caption,
+      fontSize: 10,
+      fontWeight: '700',
+      color: colors.textSecondary,
+    },
+    cartQuickBulkBtn: {
+      paddingVertical: 3,
+      paddingHorizontal: 8,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceMuted,
+    },
+    cartQuickBulkBtnActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    cartQuickBulkText: {
+      ...typography.labelSmall,
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    cartQuickBulkTextActive: {
+      color: '#FFFFFF',
+    },
     totalItemPrice: {
       ...typography.heading3,
       color: isDark ? colors.yellow : colors.primary,
@@ -1013,7 +1199,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
     undoBtnText: {
       ...typography.labelSmall,
-      color: '#210440',
+      color: '#1B1F5E',
       fontWeight: '800',
       fontSize: 11,
     },
@@ -1065,8 +1251,90 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
     checkoutBtnText: {
       ...typography.label,
-      color: '#210440',
+      color: '#1B1F5E',
       fontSize: 15,
       fontWeight: '800',
+    },
+
+    // ── Fulfillment Policy Banners & Badges ──
+    fulfillmentBannerMixed: {
+      backgroundColor: isDark ? '#1C152B' : '#FAF5FF',
+      borderRadius: radius.md,
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+    },
+    fulfillmentBannerDealer: {
+      backgroundColor: isDark ? '#1F151B' : '#FFF7F2',
+      borderRadius: radius.md,
+      borderWidth: 1.5,
+      borderColor: colors.coral,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+    },
+    fulfillmentBannerHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 4,
+    },
+    fulfillmentBannerTitle: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    fulfillmentBannerTitleDealer: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.coral,
+    },
+    fulfillmentBannerText: {
+      ...typography.caption,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+    fulfillmentDealerLink: {
+      marginTop: spacing.xs + 2,
+      alignSelf: 'flex-start',
+    },
+    fulfillmentDealerLinkText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    itemFulfillmentRow: {
+      marginTop: 3,
+      marginBottom: 2,
+    },
+    itemBadgeDirect: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+      backgroundColor: isDark ? '#231533' : '#F5EEFB',
+      alignSelf: 'flex-start',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    itemBadgeDirectText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    itemBadgeDealer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+      backgroundColor: isDark ? '#2B1A1A' : '#FFF0E8',
+      alignSelf: 'flex-start',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    itemBadgeDealerText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: colors.coral,
     },
   });

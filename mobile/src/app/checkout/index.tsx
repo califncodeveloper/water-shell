@@ -33,6 +33,7 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,6 +57,13 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { LocationService } from '@/services/locationService';
 import { PaymentService } from '@/services/paymentService';
 import { RazorpayModal } from '@/components/RazorpayModal';
+import {
+  DeliveryService,
+  TAMBARAM_BASE_ORIGIN,
+  DeliveryValidationResult,
+  useDeliveryZones,
+} from '@/services/deliveryService';
+import { DealerLocatorModal } from '@/components/DealerLocatorModal';
 
 // ── Helpers ──
 const priceFormatter = new Intl.NumberFormat('en-IN', {
@@ -135,12 +143,14 @@ export default function CheckoutScreen() {
   const {
     user,
     profile,
+    isDealer,
     isDealerApproved,
     refreshProfile,
     saveAddress,
     loading,
     setPendingAction,
   } = useAuthStore();
+  const isDealerUser = isDealer || profile?.role === 'dealer';
 
   // Current Checkout Step
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('review');
@@ -213,6 +223,17 @@ export default function CheckoutScreen() {
   const shipping = getShippingFee();
   const total = getTotal();
   const itemCount = items.reduce((sum, i) => sum + (i?.quantity || 0), 0);
+
+  const [dealerModalVisible, setDealerModalVisible] = useState(false);
+  const { activeZones, activeZoneNames, validateAddress } = useDeliveryZones();
+  const fulfillment = DeliveryService.analyzeFulfillment(items, activeZones);
+  const zoneValidation: DeliveryValidationResult = validateAddress({
+    city,
+    pincode,
+    addressLine1,
+    addressLine2,
+    state,
+  });
 
   /** Update a field and clear its inline error */
   const updateField = useCallback(
@@ -314,7 +335,23 @@ export default function CheckoutScreen() {
       setFieldErrors((prev) => ({ ...prev, pincode: undefined }));
     }
 
-    setLocationSuccess('Current location detected! Address details have been populated.');
+    const zoneRes = validateAddress({
+      city: address.city,
+      pincode: address.pincode,
+      addressLine1: address.addressLine1,
+      addressLine2: address.addressLine2,
+      state: address.state,
+    });
+
+    if (fulfillment.hasMachines) {
+      if (zoneRes.isSupported) {
+        setLocationSuccess(`Location verified in ${zoneRes.zoneName} Zone! Eligible for direct delivery from ${TAMBARAM_BASE_ORIGIN.name}.`);
+      } else {
+        setLocationWarning(`Detected location (${address.city || address.pincode}) is outside our direct delivery zones (${activeZoneNames || 'authorized zones'}).`);
+      }
+    } else {
+      setLocationSuccess('Current location detected! Address details have been populated.');
+    }
     if (address.isHouseNumberMissing) {
       setLocationWarning('Please add your house/flat/building number above to complete the address.');
     }
@@ -337,9 +374,22 @@ export default function CheckoutScreen() {
     if (saved.label && ['Home', 'Office', 'Other'].includes(saved.label)) {
       setAddressLabel(saved.label as 'Home' | 'Office' | 'Other');
     }
-    setLocationError('');
-    setLocationWarning('');
-    setLocationSuccess(`Loaded saved address: ${saved.label || 'Saved'}`);
+    const zoneRes = validateAddress({
+      city: saved.city,
+      pincode: saved.pincode,
+      addressLine1: saved.addressLine1,
+      addressLine2: saved.addressLine2,
+      state: saved.state,
+    });
+    if (fulfillment.hasMachines) {
+      if (zoneRes.isSupported) {
+        setLocationSuccess(`Loaded saved address: ${saved.label || 'Saved'} • Verified in ${zoneRes.zoneName} Zone.`);
+      } else {
+        setLocationWarning(`Saved address (${saved.city || saved.pincode}) is outside our direct delivery zones.`);
+      }
+    } else {
+      setLocationSuccess(`Loaded saved address: ${saved.label || 'Saved'}`);
+    }
     setFieldErrors({});
   };
 
@@ -354,6 +404,20 @@ export default function CheckoutScreen() {
     if (!city.trim()) errors.city = 'Enter the city.';
     if (!pincode.trim()) errors.pincode = 'Enter the pincode.';
     else if (!/^\d{6}$/.test(pincode.trim())) errors.pincode = 'Pincode must be 6 digits.';
+
+    // Delivery zone validation for machine direct delivery
+    if (fulfillment.hasMachines) {
+      if (!zoneValidation.isSupported) {
+        errors.city = `Direct delivery for machines is limited to ${activeZoneNames || 'our designated delivery zones'}.`;
+        errors.pincode = 'Address is outside supported direct delivery zones.';
+        showError(
+          zoneValidation.message ||
+          `Direct delivery for water purifiers and dispensers from Tambaram Main Branch is currently restricted to ${activeZoneNames || 'our designated delivery zones'}. Please provide a delivery address within these supported zones.`
+        );
+        setFieldErrors(errors);
+        return false;
+      }
+    }
 
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
@@ -527,6 +591,9 @@ export default function CheckoutScreen() {
       // 2. Order confirmed securely
       const confirmedOrderNumber =
         verifyRes.order?.orderNumber || `ORD-${Date.now().toString().slice(-6)}`;
+      const orderFulfillmentType: 'direct_delivery' | 'local_dealer_service' | 'mixed' =
+        fulfillment.fulfillmentType === 'empty' ? 'direct_delivery' : fulfillment.fulfillmentType;
+
       const confirmedOrder: Omit<Order, 'id'> = {
         orderNumber: confirmedOrderNumber,
         customerId: user ? user.uid : '',
@@ -539,10 +606,21 @@ export default function CheckoutScreen() {
           imageUrl: i.product.imageUrl,
           price: i.unitPrice,
           quantity: i.quantity,
+          fulfillmentMethod: DeliveryService.getProductFulfillmentType(i.product),
         })),
         subtotal,
         total,
         shippingAddress,
+        deliveryZone: zoneValidation.zoneName || 'Outside Zone',
+        baseOrigin: TAMBARAM_BASE_ORIGIN.name,
+        fulfillmentType: orderFulfillmentType,
+        fulfillmentSummary: {
+          fulfillmentType: orderFulfillmentType,
+          directDeliveryCount: fulfillment.directDeliveryCount,
+          dealerServiceCount: fulfillment.dealerServiceCount,
+          originBranch: TAMBARAM_BASE_ORIGIN.name,
+          matchedZone: zoneValidation.zoneName || 'Chennai',
+        },
         paymentProvider: 'razorpay',
         paymentStatus: 'test_success',
         paymentReference: paymentData.razorpay_payment_id,
@@ -558,7 +636,7 @@ export default function CheckoutScreen() {
     } catch (err) {
       console.error('Post-payment confirmation error:', err);
       setPlacingOrder(false);
-      showError('Network error while confirming your payment with AquaPure servers. Please retry.');
+      showError('Network error while confirming your payment with Water Shell servers. Please retry.');
     }
   };
 
@@ -647,7 +725,7 @@ export default function CheckoutScreen() {
               key: orderRes.keyId,
               amount: orderRes.amount,
               currency: orderRes.currency,
-              name: 'AquaPure',
+              name: 'Water Shell',
               description: 'Pure Water Guaranteed — Test Checkout',
               order_id: orderRes.razorpayOrderId,
               prefill: {
@@ -686,6 +764,9 @@ export default function CheckoutScreen() {
 
     // Flow B: Cash on delivery
     const customerOrderNumber = `ORD-${Date.now().toString().slice(-6)}`;
+    const orderFulfillmentType: 'direct_delivery' | 'local_dealer_service' | 'mixed' =
+      fulfillment.fulfillmentType === 'empty' ? 'direct_delivery' : fulfillment.fulfillmentType;
+
     const codOrder: Omit<Order, 'id'> = {
       orderNumber: customerOrderNumber,
       customerId: user ? user.uid : '',
@@ -698,10 +779,21 @@ export default function CheckoutScreen() {
         imageUrl: i.product.imageUrl,
         price: i.unitPrice,
         quantity: i.quantity,
+        fulfillmentMethod: DeliveryService.getProductFulfillmentType(i.product),
       })),
       subtotal,
       total,
       shippingAddress,
+      deliveryZone: zoneValidation.zoneName || 'Outside Zone',
+      baseOrigin: TAMBARAM_BASE_ORIGIN.name,
+      fulfillmentType: orderFulfillmentType,
+      fulfillmentSummary: {
+        fulfillmentType: orderFulfillmentType,
+        directDeliveryCount: fulfillment.directDeliveryCount,
+        dealerServiceCount: fulfillment.dealerServiceCount,
+        originBranch: TAMBARAM_BASE_ORIGIN.name,
+        matchedZone: zoneValidation.zoneName || 'Chennai',
+      },
       paymentProvider: 'cash_on_delivery',
       paymentStatus: 'pending',
       paymentReference: `COD-TXN-${Date.now()}`,
@@ -931,7 +1023,7 @@ export default function CheckoutScreen() {
 
               {/* Review Header */}
               <View style={styles.reviewHeader}>
-                <View>
+                <View style={{ flex: 1, marginRight: spacing.xs }}>
                   <Text style={styles.reviewHeading}>
                     Review Selected Products ({itemCount})
                   </Text>
@@ -947,11 +1039,69 @@ export default function CheckoutScreen() {
                 )}
               </View>
 
+              {/* Mixed Cart or Dealer Serviced Alert Banner */}
+              {fulfillment.isMixedCart ? (
+                <View style={styles.checkoutMixedAlert}>
+                  <View style={styles.checkoutMixedAlertIconWrap}>
+                    <Ionicons name="git-branch" size={16} color={colors.primary} />
+                  </View>
+                  <View style={styles.checkoutMixedAlertContent}>
+                    <View style={styles.checkoutMixedAlertHeaderRow}>
+                      <Text style={styles.checkoutMixedAlertTitle}>
+                        {isDealerUser ? 'Wholesale Mixed Order' : 'Mixed Delivery Method'}
+                      </Text>
+                      {!isDealerUser && (
+                        <TouchableOpacity
+                          onPress={() => setDealerModalVisible(true)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.checkoutMixedAlertLink}>Dealers →</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    <Text style={styles.checkoutMixedAlertText}>
+                      {isDealerUser
+                        ? 'Machines and accessories in your order will be delivered directly to your registered dealership address.'
+                        : 'Machines are delivered directly from our Tambaram Main Branch. Accessories will be coordinated with your authorized local dealer.'}
+                    </Text>
+                  </View>
+                </View>
+              ) : fulfillment.hasAccessories ? (
+                <View style={styles.checkoutDealerAlert}>
+                  <View style={styles.checkoutDealerAlertIconWrap}>
+                    <Ionicons name="storefront" size={16} color={colors.coral} />
+                  </View>
+                  <View style={styles.checkoutDealerAlertContent}>
+                    <View style={styles.checkoutDealerAlertHeaderRow}>
+                      <Text style={styles.checkoutDealerAlertTitle}>
+                        {isDealerUser ? 'Wholesale Dealer Fulfillment' : 'Local Dealer Fulfillment'}
+                      </Text>
+                      {!isDealerUser && (
+                        <TouchableOpacity
+                          onPress={() => setDealerModalVisible(true)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.checkoutDealerAlertLink}>Find Dealers →</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    <Text style={styles.checkoutDealerAlertText}>
+                      {isDealerUser
+                        ? 'Wholesale accessories and spare parts will be delivered directly to your dealership location.'
+                        : 'Accessories and spare parts are serviced through authorized local dealers. Direct courier delivery is not offered.'}
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
+
               {/* Interactive Product List with Stepper and Remove */}
               {items.map((item) => {
-                const maxLimit =
-                  item.maxQuantity ||
-                  (item.product.stockStatus === 'limited' ? 5 : 10);
+                const isMachineItem = DeliveryService.isMachineProduct(item.product);
+                const maxLimit = isDealerApproved
+                  ? 500
+                  : (item.maxQuantity || (item.product.stockStatus === 'limited' ? 5 : 10));
                 const isMax = item.quantity >= maxLimit;
 
                 return (
@@ -982,6 +1132,20 @@ export default function CheckoutScreen() {
                         <Text style={styles.reviewProductName} numberOfLines={2}>
                           {item.product.name}
                         </Text>
+                        {/* Fulfillment Badge */}
+                        <View style={styles.reviewFulfillmentBadgeRow}>
+                          {isMachineItem ? (
+                            <View style={styles.reviewBadgeDirect}>
+                              <Ionicons name="flash" size={10} color={colors.primary} />
+                              <Text style={styles.reviewBadgeDirectText}>Direct Delivery (Tambaram)</Text>
+                            </View>
+                          ) : (
+                            <View style={styles.reviewBadgeDealer}>
+                              <Ionicons name="storefront" size={10} color={colors.coral} />
+                              <Text style={styles.reviewBadgeDealerText}>Serviced via Local Dealer</Text>
+                            </View>
+                          )}
+                        </View>
                         <View style={styles.reviewPriceRow}>
                           <Text style={styles.reviewUnitPrice}>
                             {formatPrice(item.unitPrice)} each
@@ -1021,9 +1185,31 @@ export default function CheckoutScreen() {
                           />
                         </TouchableOpacity>
 
-                        <View style={styles.reviewQtyDisplay}>
-                          <Text style={styles.reviewQtyValue}>{item.quantity}</Text>
-                        </View>
+                        {isDealerApproved ? (
+                          <TextInput
+                            style={[
+                              styles.reviewQtyInput,
+                              { color: colors.text, backgroundColor: isDark ? '#1C1528' : '#F8FAFC' },
+                            ]}
+                            value={String(item.quantity)}
+                            onChangeText={(text) => {
+                              const cleaned = text.replace(/[^0-9]/g, '');
+                              if (!cleaned) {
+                                updateQuantity(item.product.id, 1);
+                              } else {
+                                const val = parseInt(cleaned, 10);
+                                updateQuantity(item.product.id, Math.min(maxLimit, Math.max(1, val)));
+                              }
+                            }}
+                            keyboardType="number-pad"
+                            selectTextOnFocus
+                            accessibilityLabel={`Quantity for ${item.product.name}`}
+                          />
+                        ) : (
+                          <View style={styles.reviewQtyDisplay}>
+                            <Text style={styles.reviewQtyValue}>{item.quantity}</Text>
+                          </View>
+                        )}
 
                         <TouchableOpacity
                           style={[styles.reviewStepBtn, isMax && styles.reviewStepBtnDisabled]}
@@ -1039,7 +1225,7 @@ export default function CheckoutScreen() {
                           />
                         </TouchableOpacity>
 
-                        {isMax && (
+                        {!isDealerApproved && isMax && (
                           <Text style={styles.maxLimitHint}>Limit {maxLimit}</Text>
                         )}
                       </View>
@@ -1051,6 +1237,37 @@ export default function CheckoutScreen() {
                         </Text>
                       </View>
                     </View>
+
+                    {/* Quick Bulk Selection Buttons for Approved Dealers (5, 10, 25, 50+) */}
+                    {isDealerApproved && (
+                      <View style={styles.checkoutQuickBulkRow}>
+                        <Text style={styles.checkoutQuickBulkLabel}>Bulk:</Text>
+                        {[5, 10, 25, 50].map((tier) => {
+                          const isSelected = tier === 50 ? item.quantity >= 50 : item.quantity === tier;
+                          return (
+                            <TouchableOpacity
+                              key={tier}
+                              style={[
+                                styles.checkoutQuickBulkBtn,
+                                isSelected && styles.checkoutQuickBulkBtnActive,
+                              ]}
+                              onPress={() => updateQuantity(item.product.id, tier)}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Set quantity to ${tier === 50 ? '50 plus' : tier}`}
+                            >
+                              <Text
+                                style={[
+                                  styles.checkoutQuickBulkText,
+                                  isSelected && styles.checkoutQuickBulkTextActive,
+                                ]}
+                              >
+                                {tier === 50 ? '50+' : `${tier}`}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    )}
                   </View>
                 );
               })}
@@ -1258,6 +1475,214 @@ export default function CheckoutScreen() {
                     </ScrollView>
                   </View>
                 ) : null}
+
+                {/* ── Delivery Policy & Zones Banner ── */}
+                <View
+                  style={[
+                    styles.checkoutPolicyCard,
+                    fulfillment.isMixedCart
+                      ? styles.checkoutPolicyCardMixed
+                      : !fulfillment.hasMachines
+                      ? styles.checkoutPolicyCardDealer
+                      : null,
+                  ]}
+                >
+                  <View style={styles.checkoutPolicyHeader}>
+                    <View
+                      style={
+                        fulfillment.isMixedCart
+                          ? styles.policyBadgeMixed
+                          : fulfillment.hasMachines
+                          ? styles.policyBadgeDirect
+                          : styles.policyBadgeDealer
+                      }
+                    >
+                      <Ionicons
+                        name={
+                          fulfillment.isMixedCart
+                            ? 'git-branch'
+                            : fulfillment.hasMachines
+                            ? 'flash'
+                            : 'storefront'
+                        }
+                        size={11}
+                        color="#FFFFFF"
+                      />
+                      <Text style={styles.policyBadgeText}>
+                        {fulfillment.isMixedCart
+                          ? 'MIXED DELIVERY & SERVICE'
+                          : fulfillment.hasMachines
+                          ? 'DIRECT MACHINE DELIVERY'
+                          : isDealerUser
+                          ? 'WHOLESALE DEALER DISPATCH'
+                          : 'LOCAL DEALER FULFILLMENT'}
+                      </Text>
+                    </View>
+                    <View style={styles.policyOriginPill}>
+                      <Ionicons
+                        name={
+                          fulfillment.isMixedCart
+                            ? 'git-network-outline'
+                            : fulfillment.hasMachines
+                            ? 'business-outline'
+                            : 'storefront-outline'
+                        }
+                        size={11}
+                        color={
+                          fulfillment.isMixedCart
+                            ? '#7C3AED'
+                            : fulfillment.hasMachines
+                            ? colors.primary
+                            : colors.coral
+                        }
+                      />
+                      <Text
+                        style={[
+                          styles.policyOriginText,
+                          fulfillment.isMixedCart
+                            ? styles.policyOriginTextMixed
+                            : !fulfillment.hasMachines
+                            ? styles.policyOriginTextDealer
+                            : null,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {fulfillment.isMixedCart
+                          ? 'Tambaram Hub + Dealers'
+                          : fulfillment.hasMachines
+                          ? 'Base: Tambaram Main'
+                          : isDealerUser
+                          ? 'Direct Dealer Dispatch'
+                          : 'Authorized Dealer Network'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.checkoutPolicyTitle}>
+                    {fulfillment.isMixedCart
+                      ? isDealerUser
+                        ? 'Wholesale Machine & Spares Dispatch'
+                        : 'Mixed Direct & Local Dealer Fulfillment'
+                      : fulfillment.hasMachines
+                      ? 'Supported Direct Delivery Zones'
+                      : isDealerUser
+                      ? 'Wholesale Direct Dealership Dispatch'
+                      : 'Accessories Serviced Via Local Dealers'}
+                  </Text>
+                  <Text style={styles.checkoutPolicyDesc}>
+                    {fulfillment.isMixedCart
+                      ? isDealerUser
+                        ? 'Machines and accessories in your order will be delivered directly to your registered dealership address.'
+                        : 'Machines are dispatched directly from our Tambaram Main Branch within supported zones. Accessories and spare parts will be coordinated with your authorized local dealer.'
+                      : fulfillment.hasMachines
+                      ? `Direct machine delivery is available exclusively within ${activeZoneNames || 'our authorized delivery zones'} (dispatched from Tambaram Main Branch).`
+                      : isDealerUser
+                      ? 'Wholesale accessories and spare parts will be delivered directly to your dealership location.'
+                      : 'Accessories and spare parts are fulfilled through authorized local dealers. Direct courier delivery is not offered for accessories.'}
+                  </Text>
+
+                  {/* Zones chips */}
+                  <View style={styles.checkoutZonesRow}>
+                    {activeZones.map((z) => (
+                      <View
+                        key={z.id}
+                        style={[
+                          styles.checkoutZoneChip,
+                          !fulfillment.hasMachines && styles.checkoutZoneChipDealer,
+                        ]}
+                      >
+                        <Ionicons
+                          name="location"
+                          size={11}
+                          color={fulfillment.hasMachines ? colors.primary : colors.coral}
+                        />
+                        <Text
+                          style={[
+                            styles.checkoutZoneChipText,
+                            !fulfillment.hasMachines && styles.checkoutZoneChipTextDealer,
+                          ]}
+                        >
+                          {z.name}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {/* Real-Time Zone Validation Alert */}
+                  {(city.trim() || pincode.trim()) && (
+                    <View
+                      style={[
+                        styles.zoneFeedbackBox,
+                        zoneValidation.isSupported
+                          ? styles.zoneFeedbackSuccess
+                          : fulfillment.hasMachines
+                          ? styles.zoneFeedbackError
+                          : styles.zoneFeedbackNeutral,
+                      ]}
+                    >
+                      <Ionicons
+                        name={
+                          zoneValidation.isSupported
+                            ? 'checkmark-circle'
+                            : fulfillment.hasMachines
+                            ? 'alert-circle'
+                            : 'information-circle'
+                        }
+                        size={18}
+                        color={
+                          zoneValidation.isSupported
+                            ? colors.success
+                            : fulfillment.hasMachines
+                            ? colors.error
+                            : colors.coral
+                        }
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={[
+                            styles.zoneFeedbackTitle,
+                            {
+                              color: zoneValidation.isSupported
+                                ? '#166534'
+                                : fulfillment.hasMachines
+                                ? colors.error
+                                : colors.coral,
+                            },
+                          ]}
+                        >
+                          {zoneValidation.isSupported
+                            ? `✓ Direct Delivery Confirmed (${zoneValidation.zoneName} Zone)`
+                            : fulfillment.hasMachines
+                            ? '⚠️ Outside Supported Direct Delivery Zones'
+                            : isDealerUser
+                            ? 'Dealership Address Delivery'
+                            : 'Local Dealer Assignment'}
+                        </Text>
+                        <Text style={styles.zoneFeedbackDesc}>
+                          {zoneValidation.isSupported
+                            ? `Eligible for direct dispatch from ${TAMBARAM_BASE_ORIGIN.name} (${zoneValidation.transitTime}).`
+                            : fulfillment.hasMachines
+                            ? 'Water Purifiers & Dispensers can only be delivered directly within Chennai, Chengalpattu, Kanchipuram, and Pondicherry.'
+                            : isDealerUser
+                            ? 'Your registered dealership address will be used for delivery and logistics.'
+                            : 'Your address will be used to assign the nearest authorized local dealer for pickup or technician dispatch.'}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {fulfillment.hasAccessories && !isDealerUser && (
+                    <TouchableOpacity
+                      style={styles.checkoutDealerBtn}
+                      onPress={() => setDealerModalVisible(true)}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="storefront" size={14} color={colors.coral} />
+                      <Text style={styles.checkoutDealerBtnText}>View Authorized Local Dealers</Text>
+                      <Ionicons name="chevron-forward" size={13} color={colors.coral} />
+                    </TouchableOpacity>
+                  )}
+                </View>
 
                 <Input
                   label="Full name"
@@ -1538,6 +1963,14 @@ export default function CheckoutScreen() {
         onFailure={handleRazorpayFailure}
         onDismiss={handleRazorpayDismiss}
       />
+      {/* ── Dealer Locator Modal (Customers Only) ── */}
+      {!isDealerUser && (
+        <DealerLocatorModal
+          visible={dealerModalVisible}
+          onClose={() => setDealerModalVisible(false)}
+          sourceContext="checkout"
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -1814,6 +2247,54 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     ...typography.bodyMedium,
     color: colors.text,
     fontWeight: '700',
+  },
+  reviewQtyInput: {
+    ...typography.bodyMedium,
+    fontWeight: '700',
+    fontSize: 14,
+    width: 44,
+    height: 32,
+    textAlign: 'center',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: colors.border,
+    padding: 0,
+  },
+  checkoutQuickBulkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+  },
+  checkoutQuickBulkLabel: {
+    ...typography.caption,
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
+  checkoutQuickBulkBtn: {
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
+  },
+  checkoutQuickBulkBtnActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  checkoutQuickBulkText: {
+    ...typography.labelSmall,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  checkoutQuickBulkTextActive: {
+    color: '#FFFFFF',
   },
   maxLimitHint: {
     ...typography.caption,
@@ -2298,5 +2779,314 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
   bottomTotal: {
     ...typography.heading2,
     color: colors.primary,
+  },
+
+  // ── Delivery Policy & Zones Checkout Styles ──
+  checkoutMixedAlert: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: isDark ? '#1C152B' : '#FAF5FF',
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    marginBottom: spacing.md,
+  },
+  checkoutMixedAlertIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: isDark ? '#2A1C3E' : '#F3E8FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  checkoutMixedAlertContent: {
+    flex: 1,
+  },
+  checkoutMixedAlertHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  checkoutMixedAlertTitle: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: colors.primary,
+    fontSize: 13,
+  },
+  checkoutMixedAlertLink: {
+    ...typography.labelSmall,
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 11,
+  },
+  checkoutMixedAlertText: {
+    ...typography.caption,
+    color: colors.text,
+    lineHeight: 18,
+    fontSize: 12,
+  },
+  checkoutDealerAlert: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: isDark ? '#23151D' : '#FFF7F2',
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.coral,
+    marginBottom: spacing.md,
+  },
+  checkoutDealerAlertIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: isDark ? '#331B19' : '#FFEBE0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  checkoutDealerAlertContent: {
+    flex: 1,
+  },
+  checkoutDealerAlertHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  checkoutDealerAlertTitle: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: colors.coral,
+    fontSize: 13,
+  },
+  checkoutDealerAlertLink: {
+    ...typography.labelSmall,
+    color: colors.coral,
+    fontWeight: '700',
+    fontSize: 11,
+  },
+  checkoutDealerAlertText: {
+    ...typography.caption,
+    color: colors.text,
+    lineHeight: 18,
+    fontSize: 12,
+  },
+  reviewFulfillmentBadgeRow: {
+    marginTop: 3,
+    marginBottom: 4,
+  },
+  reviewBadgeDirect: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: isDark ? '#231533' : '#F5EEFB',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 4,
+    maxWidth: '100%',
+  },
+  reviewBadgeDirectText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  reviewBadgeDealer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: isDark ? '#2B1A1A' : '#FFF0E8',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 4,
+    maxWidth: '100%',
+  },
+  reviewBadgeDealerText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.coral,
+  },
+  checkoutPolicyCard: {
+    backgroundColor: isDark ? '#1A1426' : '#FAF5FF',
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  checkoutPolicyCardDealer: {
+    backgroundColor: isDark ? '#23151D' : '#FFF7F2',
+    borderColor: colors.coral,
+  },
+  checkoutPolicyCardMixed: {
+    backgroundColor: isDark ? '#1C152B' : '#FAF5FF',
+    borderColor: colors.primary,
+  },
+  checkoutPolicyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    rowGap: 6,
+    marginBottom: spacing.xs,
+  },
+  policyBadgeDirect: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    alignSelf: 'flex-start',
+    flexShrink: 0,
+  },
+  policyBadgeDealer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.coral,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    alignSelf: 'flex-start',
+    flexShrink: 0,
+  },
+  policyBadgeMixed: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#7C3AED',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    alignSelf: 'flex-start',
+    flexShrink: 0,
+  },
+  policyBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.4,
+  },
+  policyOriginPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    flexShrink: 1,
+    maxWidth: '100%',
+  },
+  policyOriginText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  policyOriginTextDealer: {
+    color: colors.coral,
+  },
+  policyOriginTextMixed: {
+    color: '#7C3AED',
+  },
+  checkoutPolicyTitle: {
+    ...typography.subtitle2,
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: spacing.xs,
+  },
+  checkoutPolicyDesc: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  checkoutZonesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  checkoutZoneChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: isDark ? '#261C36' : '#F3E8FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
+  checkoutZoneChipDealer: {
+    backgroundColor: isDark ? '#2B1A1A' : '#FFF0E8',
+  },
+  checkoutZoneChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  checkoutZoneChipTextDealer: {
+    color: colors.coral,
+  },
+  zoneFeedbackBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    marginTop: spacing.md,
+  },
+  zoneFeedbackSuccess: {
+    backgroundColor: isDark ? '#0D2114' : '#F0FDF4',
+    borderWidth: 1,
+    borderColor: 'rgba(220, 38, 38, 0.3)',
+  },
+  zoneFeedbackError: {
+    backgroundColor: isDark ? '#2B1212' : '#FEF2F2',
+    borderWidth: 1,
+    borderColor: 'rgba(220, 38, 38, 0.3)',
+  },
+  zoneFeedbackNeutral: {
+    backgroundColor: isDark ? '#231818' : '#FFF9F5',
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(255, 107, 74, 0.35)' : 'rgba(255, 107, 74, 0.25)',
+  },
+  zoneFeedbackTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  zoneFeedbackDesc: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  checkoutDealerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: spacing.sm,
+    backgroundColor: isDark ? 'rgba(255, 107, 74, 0.12)' : '#FFF0E8',
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(255, 107, 74, 0.35)' : 'rgba(255, 107, 74, 0.25)',
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 8,
+    borderRadius: radius.md,
+    alignSelf: 'flex-start',
+  },
+  checkoutDealerBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.coral,
   },
 });

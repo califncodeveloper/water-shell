@@ -37,7 +37,8 @@ const BENEFITS = [
 export default function DealerRegisterScreen() {
   const { colors, isDark } = useTheme();
   const styles = useThemedStyles(getStyles);
-  const [businessName, setBusinessName] = useState('');
+  const [shopName, setShopName] = useState('');
+  const [shopAddress, setShopAddress] = useState('');
   const [contactName, setContactName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -46,6 +47,7 @@ export default function DealerRegisterScreen() {
   const [errorMessage, setErrorMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
+  const shopAddressInputRef = useRef<TextInputRef>(null);
   const contactNameInputRef = useRef<TextInputRef>(null);
   const emailInputRef = useRef<TextInputRef>(null);
   const phoneInputRef = useRef<TextInputRef>(null);
@@ -77,7 +79,17 @@ export default function DealerRegisterScreen() {
 
   const handleApply = async () => {
     setErrorMessage('');
-    if (!businessName.trim() || !contactName.trim() || !email.trim() || !phone.trim() || !password.trim()) {
+    if (!shopName.trim()) {
+      setErrorMessage('Shop Name is required.');
+      return;
+    }
+
+    if (!shopAddress.trim()) {
+      setErrorMessage('Shop Address is required.');
+      return;
+    }
+
+    if (!contactName.trim() || !email.trim() || !phone.trim() || !password.trim()) {
       setErrorMessage('Please fill in all mandatory fields.');
       return;
     }
@@ -92,7 +104,9 @@ export default function DealerRegisterScreen() {
       pass: password,
       name: contactName.trim(),
       phone: phone.trim(),
-      businessName: businessName.trim(),
+      shopName: shopName.trim(),
+      shopAddress: shopAddress.trim(),
+      businessName: shopName.trim(),
       gstNumber: gstNumber.trim(),
     });
 
@@ -128,8 +142,8 @@ export default function DealerRegisterScreen() {
             </View>
             <Text style={styles.successTitle}>Application Submitted!</Text>
             <Text style={styles.successDesc}>
-              Thank you for applying to the AquaPure Dealer Partner Network.
-              Our team will review your business credentials ({businessName}) within 24-48 hours.
+              Thank you for applying to the Water Shell Dealer Partner Network.
+              Our team will review your business credentials ({shopName}) within 24-48 hours.
             </Text>
             <View style={styles.pendingBadge}>
               <Ionicons name="time-outline" size={16} color={colors.warning} />
@@ -228,19 +242,53 @@ export default function DealerRegisterScreen() {
               </View>
             ) : null}
 
+            {/* Minimum First-Purchase Commitment Note */}
+            <View style={styles.commitmentCard}>
+              <View style={styles.commitmentIconOuter}>
+                <Ionicons name="pricetag" size={16} color={isDark ? colors.yellow : '#A16207'} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.commitmentTag}>B2B ONBOARDING REQUIREMENT</Text>
+                <Text style={styles.commitmentTitle}>
+                  Minimum first-purchase commitment of ₹1,00,000
+                </Text>
+                <Text style={styles.commitmentDesc}>
+                  Approved dealer accounts unlock wholesale pricing upon committing to an opening purchase of ₹1,00,000 or more.
+                </Text>
+              </View>
+            </View>
+
             <Input
-              label="Business / Enterprise Name *"
+              label="Shop Name *"
               placeholder="e.g. Apex Water Technologies"
-              value={businessName}
-              onChangeText={setBusinessName}
+              value={shopName}
+              onChangeText={setShopName}
               autoCapitalize="words"
               autoComplete="organization"
               textContentType="organizationName"
               returnKeyType="next"
+              onSubmitEditing={() => shopAddressInputRef.current?.focus()}
+              containerOnLayout={registerFieldLayout('shopName')}
+              onFocus={() => handleFieldFocus('shopName')}
+              onBlur={() => handleFieldBlur('shopName')}
+            />
+
+            <Input
+              ref={shopAddressInputRef}
+              label="Shop Address *"
+              placeholder="e.g. Shop 12, Ground Floor, Royal Complex, Link Road, Mumbai 400053"
+              value={shopAddress}
+              onChangeText={setShopAddress}
+              autoCapitalize="sentences"
+              autoComplete="street-address"
+              textContentType="fullStreetAddress"
+              returnKeyType="next"
+              multiline
+              numberOfLines={2}
               onSubmitEditing={() => contactNameInputRef.current?.focus()}
-              containerOnLayout={registerFieldLayout('businessName')}
-              onFocus={() => handleFieldFocus('businessName')}
-              onBlur={() => handleFieldBlur('businessName')}
+              containerOnLayout={registerFieldLayout('shopAddress')}
+              onFocus={() => handleFieldFocus('shopAddress')}
+              onBlur={() => handleFieldBlur('shopAddress')}
             />
 
             <Input
@@ -367,7 +415,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
 
     // Hero
     hero: {
-      backgroundColor: isDark ? '#1C1327' : '#210440',
+      backgroundColor: colors.headerBackground,
       paddingHorizontal: spacing.lg,
       paddingBottom: spacing['4xl'] + spacing.md, // room for card overlap
       borderBottomLeftRadius: 32,
@@ -427,7 +475,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
     badgeText: {
       ...typography.labelSmall,
-      color: '#210440',
+      color: '#1B1F5E',
       fontSize: 10,
       fontWeight: '800',
       letterSpacing: 0.8,
@@ -478,6 +526,47 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       shadowOpacity: 0.08,
       shadowRadius: 20,
       elevation: 6,
+    },
+    commitmentCard: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.sm + 2,
+      backgroundColor: isDark ? 'rgba(234, 179, 8, 0.12)' : '#FEF9C3',
+      borderColor: isDark ? 'rgba(234, 179, 8, 0.45)' : '#FDE047',
+      borderWidth: 1,
+      borderRadius: 14,
+      padding: spacing.md,
+      marginBottom: spacing.lg,
+    },
+    commitmentIconOuter: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: isDark ? 'rgba(234, 179, 8, 0.22)' : '#FEF08A',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 2,
+    },
+    commitmentTag: {
+      ...typography.labelSmall,
+      color: isDark ? colors.yellow : '#854D0E',
+      fontSize: 10,
+      fontWeight: '800',
+      letterSpacing: 0.6,
+      marginBottom: 3,
+    },
+    commitmentTitle: {
+      ...typography.label,
+      color: isDark ? '#FFFFFF' : '#713F12',
+      fontSize: 14,
+      fontWeight: '800',
+      lineHeight: 20,
+    },
+    commitmentDesc: {
+      ...typography.caption,
+      color: isDark ? 'rgba(255,255,255,0.78)' : '#854D0E',
+      marginTop: 3,
+      lineHeight: 16,
     },
     errorBox: {
       flexDirection: 'row',

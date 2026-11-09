@@ -33,6 +33,7 @@ import {
   NativeScrollEvent,
   Modal,
   Alert,
+  TextInput,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -41,26 +42,46 @@ import { ProductsService } from '@/services/productsService';
 import { useCartStore } from '@/stores/cartStore';
 import { useCheckoutStore } from '@/stores/checkoutStore';
 import { useAuthStore } from '@/stores/authStore';
+import { PricingService } from '@/services/pricingService';
 import { Product, CartItem } from '@/types';
 import { useTheme, useThemedStyles, ThemeColors, spacing, radius, typography } from '@/theme';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { LoadingState, ErrorState, AppRefreshControl } from '@/components/ui';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import {
+  DeliveryService,
+  TAMBARAM_BASE_ORIGIN,
+  DeliveryZoneId,
+  useDeliveryZones,
+} from '@/services/deliveryService';
+import { DealerLocatorModal } from '@/components/DealerLocatorModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_HEIGHT = 320;
 
+// Local bundled images for official catalog additions (Aqua Touch etc.)
+const LOCAL_CATALOG_IMAGES: Record<string, any> = {
+  'AP-WP-061': require('../../../assets/images/aqua-touch.jpg'),
+  'aqua-touch': require('../../../assets/images/aqua-touch.jpg'),
+};
+
 // ──── Gallery Image Component ────
 function GalleryImage({
   uri,
+  productId,
   onPress,
 }: {
   uri: string;
+  productId?: string;
   onPress?: () => void;
 }) {
   const { colors, isDark } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  const localImg =
+    (productId && LOCAL_CATALOG_IMAGES[productId]) ||
+    (uri.includes('aqua-touch') ? LOCAL_CATALOG_IMAGES['aqua-touch'] : null);
 
   return (
     <TouchableOpacity
@@ -73,19 +94,19 @@ function GalleryImage({
       accessibilityRole="button"
       accessibilityLabel="Product image. Tap to view full screen zoom."
     >
-      {loading && !error && (
+      {loading && !error && !localImg && (
         <View style={galleryStyles.imagePlaceholder}>
           <ActivityIndicator size="large" color={colors.peach} />
         </View>
       )}
-      {error ? (
+      {error && !localImg ? (
         <View style={galleryStyles.imagePlaceholder}>
           <Ionicons name="image-outline" size={48} color={colors.border} />
           <Text style={galleryStyles.errorText}>Image unavailable</Text>
         </View>
       ) : (
         <Image
-          source={{ uri }}
+          source={localImg && error ? localImg : { uri }}
           style={galleryStyles.image}
           resizeMode="contain"
           onLoadStart={() => setLoading(true)}
@@ -138,8 +159,39 @@ export default function ProductDetailScreen() {
   const [zoomVisible, setZoomVisible] = useState(false);
   const [zoomIndex, setZoomIndex] = useState(0);
   const [buyNowModalVisible, setBuyNowModalVisible] = useState(false);
+  const [dealerModalVisible, setDealerModalVisible] = useState(false);
+  const [pincodeInput, setPincodeInput] = useState('');
+  const [pincodeCheckResult, setPincodeCheckResult] = useState<{
+    checked: boolean;
+    isSupported: boolean;
+    message: string;
+    zoneName?: string;
+  } | null>(null);
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const galleryRef = useRef<FlatList>(null);
+
+  const { activeZones, activeZoneNames, validateAddress } = useDeliveryZones();
+  const isMachine = product ? DeliveryService.isMachineProduct(product) : false;
+  const isAccessory = product ? DeliveryService.isAccessoryProduct(product) : false;
+
+  const handleCheckPincode = () => {
+    const clean = pincodeInput.replace(/\D/g, '').trim();
+    if (clean.length < 4) {
+      setPincodeCheckResult({
+        checked: true,
+        isSupported: false,
+        message: 'Please enter a valid 6-digit pincode.',
+      });
+      return;
+    }
+    const res = validateAddress({ pincode: clean });
+    setPincodeCheckResult({
+      checked: true,
+      isSupported: res.isSupported,
+      message: res.message,
+      zoneName: res.zoneName,
+    });
+  };
 
   const loadProduct = useCallback(async () => {
     if (!targetId) return;
@@ -189,7 +241,7 @@ export default function ProductDetailScreen() {
     if (!product) return;
     try {
       await Share.share({
-        message: `Check out ${product.name} on AquaPure: ₹${product.customerPrice}`,
+        message: `Check out ${product.name} on Water Shell: ₹${product.customerPrice}`,
       });
     } catch {
       // Ignore
@@ -197,14 +249,16 @@ export default function ProductDetailScreen() {
   };
 
   const { addItem, items: cartItems } = useCartStore();
-  const { user, isDealerApproved, setPendingAction } = useAuthStore();
+  const { user, isDealer, isDealerApproved, profile, setPendingAction } = useAuthStore();
+  const isDealerUser = isDealer || profile?.role === 'dealer';
 
   // Compute stock-based max quantity
   const maxQuantity = useMemo(() => {
     if (!product) return 1;
     if (product.stockStatus === 'out_of_stock') return 0;
+    if (isDealerApproved) return 500;
     return product.stockStatus === 'limited' ? 5 : 10;
-  }, [product]);
+  }, [product, isDealerApproved]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -268,7 +322,7 @@ export default function ProductDetailScreen() {
         ? product.dealerPrice
         : (product.customerPrice ?? product.price ?? 0);
     const initialQty = Math.max(1, quantity);
-    const validQty = Math.min(initialQty, maxQuantity || 10);
+    const validQty = Math.min(initialQty, maxQuantity || (isDealerApproved ? 500 : 10));
     const checkoutItem: CartItem = {
       productId: product.id,
       name: product.name,
@@ -277,7 +331,7 @@ export default function ProductDetailScreen() {
       unitPrice,
       totalPrice: unitPrice * validQty,
       quantity: validQty,
-      maxQuantity: maxQuantity || 10,
+      maxQuantity: maxQuantity || (isDealerApproved ? 500 : 10),
       product,
     };
     useCheckoutStore.getState().initCheckout([checkoutItem], 'buy_now');
@@ -306,7 +360,7 @@ export default function ProductDetailScreen() {
               setPendingAction({
                 type: 'BOOK_SERVICE',
                 bookingData: {
-                  selectedType: 'installation',
+                  selectedType: 'general_service',
                   productId: product.id,
                   productName: product.name,
                 },
@@ -378,46 +432,17 @@ export default function ProductDetailScreen() {
     );
   }
 
-  // ──── Pricing Calculations ────
-  const formattedCustomerPrice = new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(product.customerPrice);
-
-  // Format dealer price strictly if user is an approved dealer
-  const formattedDealerPrice =
-    isDealerApproved && product.dealerPrice
-      ? new Intl.NumberFormat('en-IN', {
-          style: 'currency',
-          currency: 'INR',
-          maximumFractionDigits: 0,
-        }).format(product.dealerPrice)
-      : null;
-
-  // Show savings only when dealer is approved and there's a valid price difference
-  const showSavings =
-    isDealerApproved &&
-    product.dealerPrice != null &&
-    product.dealerPrice > 0 &&
-    product.customerPrice > product.dealerPrice;
-
-  const savingsAmount = showSavings ? product.customerPrice - product.dealerPrice! : 0;
-  const savingsPercent = showSavings
-    ? Math.round((savingsAmount / product.customerPrice) * 100)
-    : 0;
-
-  const formattedSavings = showSavings
-    ? new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
-        maximumFractionDigits: 0,
-      }).format(savingsAmount)
-    : null;
-
-  // Effective price for the user
-  const effectivePrice =
-    isDealerApproved && product.dealerPrice ? product.dealerPrice : product.customerPrice;
+  // ──── Pricing Calculations (Centralized via PricingService) ────
+  const pricing = PricingService.getProductPricing(product, isDealerApproved);
+  const {
+    formattedCustomerPrice,
+    formattedDealerPrice,
+    effectivePrice,
+    savingsAmount,
+    savingsPercent,
+    formattedSavings,
+  } = pricing;
+  const showSavings = savingsAmount > 0;
 
   // Warranty info from specs
   const warrantySpec = product.specifications?.find(
@@ -474,6 +499,7 @@ export default function ProductDetailScreen() {
             renderItem={({ item, index }) => (
               <GalleryImage
                 uri={item}
+                productId={product?.id}
                 onPress={() => {
                   setZoomIndex(index);
                   setZoomVisible(true);
@@ -628,19 +654,19 @@ export default function ProductDetailScreen() {
             </Text>
           </View>
 
-          {/* ── Pricing Section ── */}
+          {/* ── Pricing Section (Retail MRP completely hidden from approved dealers) ── */}
           <View style={styles.pricingSection}>
             <View style={styles.pricingMain}>
               {isDealerApproved && product.dealerPrice ? (
                 <>
                   <View style={styles.dealerPricingTag}>
-                    <Ionicons name="shield-checkmark" size={12} color={colors.primary} />
-                    <Text style={styles.dealerPricingTagText}>Approved Dealer Wholesale Rate</Text>
+                    <Ionicons name="shield-checkmark" size={13} color={colors.primary} />
+                    <Text style={styles.dealerPricingTagText}>Exclusive Dealer Pricing</Text>
                   </View>
                   <Text style={styles.priceLabel}>Wholesale Dealer Price</Text>
                   <Text style={styles.priceValue}>{formattedDealerPrice}</Text>
-                  <Text style={styles.retailPriceStrikethrough}>
-                    Retail MRP {formattedCustomerPrice}
+                  <Text style={styles.taxInclusiveText}>
+                    Wholesale B2B pricing • GST & official warranty included
                   </Text>
                 </>
               ) : (
@@ -655,65 +681,178 @@ export default function ProductDetailScreen() {
             </View>
           </View>
 
-          {/* Savings Banner (Only for approved dealers with valid calculated savings) */}
-          {showSavings && formattedSavings && (
-            <View style={styles.savingsBanner}>
-              <Ionicons name="pricetag" size={14} color={colors.success} />
-              <Text style={styles.savingsText}>
-                You save {formattedSavings} ({savingsPercent}% wholesale margin) as an approved dealer
-              </Text>
+          {/* ── Quantity Selector (Bulk Quantity Selection for Approved Dealers) ── */}
+          {isDealerApproved ? (
+            <View style={styles.bulkQuantitySection}>
+              <View style={styles.bulkQuantityHeader}>
+                <View>
+                  <View style={styles.bulkTag}>
+                    <Ionicons name="cube-outline" size={12} color={colors.primary} />
+                    <Text style={styles.bulkTagText}>WHOLESALE BULK SELECTION</Text>
+                  </View>
+                  <Text style={styles.quantityLabel}>Bulk Quantity Selection</Text>
+                  <Text style={styles.bulkQuantityHint}>
+                    Enter units directly or pick quick bulk tiers (5, 10, 25, 50+)
+                  </Text>
+                </View>
+              </View>
+
+              {/* Quick Selection Buttons: 5, 10, 25, 50+ */}
+              <View style={styles.quickBulkRow}>
+                {[5, 10, 25, 50].map((tier) => {
+                  const isSelected = tier === 50 ? quantity >= 50 : quantity === tier;
+                  return (
+                    <TouchableOpacity
+                      key={tier}
+                      style={[
+                        styles.quickBulkChip,
+                        isSelected && styles.quickBulkChipActive,
+                        isOutOfStock && styles.quickBulkChipDisabled,
+                      ]}
+                      onPress={() => !isOutOfStock && setQuantity(tier)}
+                      disabled={isOutOfStock}
+                      activeOpacity={0.75}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Select ${tier === 50 ? '50 plus' : tier} units`}
+                    >
+                      <Text
+                        style={[
+                          styles.quickBulkChipText,
+                          isSelected && styles.quickBulkChipTextActive,
+                        ]}
+                      >
+                        {tier === 50 ? '50+' : `${tier}`}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.quickBulkChipSub,
+                          isSelected && styles.quickBulkChipSubActive,
+                        ]}
+                      >
+                        units
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Direct Numeric Input with fine-tuning step buttons */}
+              <View style={styles.bulkInputRow}>
+                <View style={styles.bulkNumericInputWrap}>
+                  <TouchableOpacity
+                    style={[styles.bulkQtyBtn, (quantity <= 1 || isOutOfStock) && styles.qtyBtnDisabled]}
+                    onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1 || isOutOfStock}
+                    accessibilityLabel="Decrease quantity"
+                  >
+                    <Ionicons
+                      name="remove"
+                      size={18}
+                      color={quantity <= 1 || isOutOfStock ? colors.border : colors.primary}
+                    />
+                  </TouchableOpacity>
+
+                  <TextInput
+                    style={[
+                      styles.bulkNumericInput,
+                      {
+                        color: colors.text,
+                        backgroundColor: isDark ? '#1C1528' : '#F8FAFC',
+                        borderColor: colors.border,
+                      },
+                    ]}
+                    value={String(isOutOfStock ? 0 : quantity)}
+                    onChangeText={(text) => {
+                      const cleaned = text.replace(/[^0-9]/g, '');
+                      if (!cleaned) {
+                        setQuantity(1);
+                      } else {
+                        const val = parseInt(cleaned, 10);
+                        setQuantity(Math.min(maxQuantity || 500, Math.max(1, val)));
+                      }
+                    }}
+                    keyboardType="number-pad"
+                    selectTextOnFocus
+                    editable={!isOutOfStock}
+                    accessibilityLabel="Direct numeric quantity input"
+                  />
+
+                  <TouchableOpacity
+                    style={[styles.bulkQtyBtn, (quantity >= maxQuantity || isOutOfStock) && styles.qtyBtnDisabled]}
+                    onPress={() => setQuantity(Math.min(maxQuantity || 500, quantity + 1))}
+                    disabled={quantity >= maxQuantity || isOutOfStock}
+                    accessibilityLabel="Increase quantity"
+                  >
+                    <Ionicons
+                      name="add"
+                      size={18}
+                      color={quantity >= maxQuantity || isOutOfStock ? colors.border : colors.primary}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.bulkLineTotalCol}>
+                  <Text style={styles.bulkLineTotalLabel}>Wholesale Batch Total</Text>
+                  <Text style={styles.bulkLineTotalValue}>
+                    {new Intl.NumberFormat('en-IN', {
+                      style: 'currency',
+                      currency: 'INR',
+                      maximumFractionDigits: 0,
+                    }).format(effectivePrice * (isOutOfStock ? 0 : quantity))}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.quantitySection}>
+              <View>
+                <Text style={styles.quantityLabel}>Quantity</Text>
+                {product.stockStatus === 'limited' && (
+                  <Text style={styles.stockLimitHint}>Max 5 units per order</Text>
+                )}
+                {product.stockStatus === 'in_stock' && (
+                  <Text style={styles.stockLimitHintNormal}>Max 10 units per order</Text>
+                )}
+                {isOutOfStock && (
+                  <Text style={styles.stockLimitHintError}>Item out of stock</Text>
+                )}
+              </View>
+              <View style={styles.quantitySelector}>
+                <TouchableOpacity
+                  style={[styles.qtyBtn, quantity <= 1 && styles.qtyBtnDisabled]}
+                  onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                  disabled={quantity <= 1 || isOutOfStock}
+                  accessibilityLabel="Decrease quantity"
+                >
+                  <Ionicons
+                    name="remove"
+                    size={18}
+                    color={quantity <= 1 || isOutOfStock ? colors.border : colors.primary}
+                  />
+                </TouchableOpacity>
+                <Text style={[styles.qtyText, isOutOfStock && { color: colors.textSecondary }]}>
+                  {isOutOfStock ? 0 : quantity}
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.qtyBtn,
+                    (quantity >= maxQuantity || isOutOfStock) && styles.qtyBtnDisabled,
+                  ]}
+                  onPress={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
+                  disabled={quantity >= maxQuantity || isOutOfStock}
+                  accessibilityLabel="Increase quantity"
+                >
+                  <Ionicons
+                    name="add"
+                    size={18}
+                    color={
+                      quantity >= maxQuantity || isOutOfStock ? colors.border : colors.primary
+                    }
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
           )}
-
-          {/* ── Quantity Selector ── */}
-          <View style={styles.quantitySection}>
-            <View>
-              <Text style={styles.quantityLabel}>Quantity</Text>
-              {product.stockStatus === 'limited' && (
-                <Text style={styles.stockLimitHint}>Max 5 units per order</Text>
-              )}
-              {product.stockStatus === 'in_stock' && (
-                <Text style={styles.stockLimitHintNormal}>Max 10 units per order</Text>
-              )}
-              {isOutOfStock && (
-                <Text style={styles.stockLimitHintError}>Item out of stock</Text>
-              )}
-            </View>
-            <View style={styles.quantitySelector}>
-              <TouchableOpacity
-                style={[styles.qtyBtn, quantity <= 1 && styles.qtyBtnDisabled]}
-                onPress={() => setQuantity(Math.max(1, quantity - 1))}
-                disabled={quantity <= 1 || isOutOfStock}
-                accessibilityLabel="Decrease quantity"
-              >
-                <Ionicons
-                  name="remove"
-                  size={18}
-                  color={quantity <= 1 || isOutOfStock ? colors.border : colors.primary}
-                />
-              </TouchableOpacity>
-              <Text style={[styles.qtyText, isOutOfStock && { color: colors.textSecondary }]}>
-                {isOutOfStock ? 0 : quantity}
-              </Text>
-              <TouchableOpacity
-                style={[
-                  styles.qtyBtn,
-                  (quantity >= maxQuantity || isOutOfStock) && styles.qtyBtnDisabled,
-                ]}
-                onPress={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
-                disabled={quantity >= maxQuantity || isOutOfStock}
-                accessibilityLabel="Increase quantity"
-              >
-                <Ionicons
-                  name="add"
-                  size={18}
-                  color={
-                    quantity >= maxQuantity || isOutOfStock ? colors.border : colors.primary
-                  }
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
 
           {/* ── Description ── */}
           {product.description ? (
@@ -752,31 +891,134 @@ export default function ProductDetailScreen() {
             </>
           )}
 
-          {/* ── Warranty & Delivery Info ── */}
+          {/* ── Warranty & Delivery Policy Section ── */}
+          <View style={styles.sectionDivider} />
+
+          {/* Warranty Info if available */}
           {warrantySpec && (
-            <>
-              <View style={styles.sectionDivider} />
-              <View style={styles.infoRow}>
-                <View style={styles.infoItem}>
-                  <View style={styles.infoIconCircle}>
-                    <Ionicons name="shield-checkmark" size={18} color={colors.primary} />
-                  </View>
-                  <View style={styles.infoItemText}>
-                    <Text style={styles.infoItemTitle}>Warranty</Text>
-                    <Text style={styles.infoItemValue}>{warrantySpec.value}</Text>
-                  </View>
-                </View>
-                <View style={styles.infoItem}>
-                  <View style={styles.infoIconCircle}>
-                    <Ionicons name="time-outline" size={18} color={colors.primary} />
-                  </View>
-                  <View style={styles.infoItemText}>
-                    <Text style={styles.infoItemTitle}>Delivery</Text>
-                    <Text style={styles.infoItemValue}>3–7 Business Days</Text>
-                  </View>
-                </View>
+            <View style={styles.warrantyRow}>
+              <View style={styles.infoIconCircle}>
+                <Ionicons name="shield-checkmark" size={18} color={colors.primary} />
               </View>
-            </>
+              <View style={styles.infoItemText}>
+                <Text style={styles.infoItemTitle}>Official Warranty</Text>
+                <Text style={styles.infoItemValue}>{warrantySpec.value}</Text>
+              </View>
+            </View>
+          )}
+
+          {/* ── Delivery Policy: Machines Direct Delivery from Tambaram ── */}
+          {isMachine ? (
+            <View style={styles.deliveryPolicyCard}>
+              <View style={styles.deliveryPolicyHeader}>
+                <View style={styles.deliveryBadgeDirect}>
+                  <Ionicons name="flash" size={12} color="#FFFFFF" />
+                  <Text style={styles.deliveryBadgeDirectText}>DIRECT DELIVERY AVAILABLE</Text>
+                </View>
+                <Text style={styles.deliveryTransitTime}>1–2 Business Days</Text>
+              </View>
+
+              <Text style={styles.deliveryPolicyTitle}>
+                Direct Delivery from {TAMBARAM_BASE_ORIGIN.name}
+              </Text>
+              <Text style={styles.deliveryPolicyDesc}>
+                Water purifiers and dispensers are dispatched directly from our Tambaram Main Branch with technician installation across our authorized delivery zones{activeZoneNames ? ` (${activeZoneNames})` : ''}:
+              </Text>
+
+              {/* Supported Zones List */}
+              <View style={styles.zonesListRow}>
+                {activeZones.map((zone) => (
+                  <View key={zone.id} style={styles.zoneChip}>
+                    <Ionicons name="checkmark-circle" size={12} color={colors.primary} />
+                    <Text style={styles.zoneChipText}>{zone.name}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* Pincode Check Row */}
+              <View style={styles.pincodeCheckRow}>
+                <TextInput
+                  style={styles.pincodeInputStyle}
+                  placeholder="Enter Pincode (e.g. 600045)"
+                  placeholderTextColor={colors.textSecondary}
+                  value={pincodeInput}
+                  onChangeText={setPincodeInput}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                />
+                <TouchableOpacity
+                  style={styles.pincodeCheckBtn}
+                  onPress={handleCheckPincode}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.pincodeCheckBtnText}>Check Zone</Text>
+                </TouchableOpacity>
+              </View>
+
+              {pincodeCheckResult && (
+                <View
+                  style={[
+                    styles.pincodeResultBox,
+                    pincodeCheckResult.isSupported
+                      ? styles.pincodeResultSuccess
+                      : styles.pincodeResultWarning,
+                  ]}
+                >
+                  <Ionicons
+                    name={pincodeCheckResult.isSupported ? 'checkmark-circle' : 'alert-circle'}
+                    size={16}
+                    color={pincodeCheckResult.isSupported ? colors.success : colors.warning}
+                  />
+                  <Text
+                    style={[
+                      styles.pincodeResultText,
+                      { color: pincodeCheckResult.isSupported ? '#166534' : '#854D0E' },
+                    ]}
+                  >
+                    {pincodeCheckResult.message}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            /* ── Delivery Policy: Accessories Dealer Serviced ── */
+            <View style={styles.deliveryPolicyDealerCard}>
+              <View style={styles.deliveryPolicyHeader}>
+                <View style={styles.deliveryBadgeDealer}>
+                  <Ionicons name="storefront" size={12} color="#FFFFFF" />
+                  <Text style={styles.deliveryBadgeDealerText}>
+                    {isDealerUser ? 'B2B WHOLESALE DISPATCH' : 'LOCAL DEALER FULFILLMENT'}
+                  </Text>
+                </View>
+                <Text style={styles.dealerNoDirectText}>
+                  {isDealerUser ? 'Direct to Shop' : 'No Direct Courier'}
+                </Text>
+              </View>
+
+              <Text style={styles.deliveryPolicyTitle}>
+                {isDealerUser
+                  ? 'Wholesale Dispatch to Registered Store'
+                  : 'Serviced via Authorized Local Dealers'}
+              </Text>
+              <Text style={styles.deliveryPolicyDesc}>
+                {isDealerUser
+                  ? 'Accessories, replacement filters, and spare parts are shipped directly in bulk or unit orders to your authorized dealership address.'
+                  : 'Accessories, filter cartridges, and spare parts must be serviced or picked up through our authorized local dealers to guarantee genuine warranty and expert fitting. Direct delivery is not offered for accessories.'}
+              </Text>
+
+              {!isDealerUser && (
+                <TouchableOpacity
+                  style={styles.dealerLocatorActionBtn}
+                  onPress={() => setDealerModalVisible(true)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="business" size={16} color="#FFFFFF" />
+                  <Text style={styles.dealerLocatorActionBtnText}>
+                    Find & Contact Local Dealer
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           )}
 
           {/* ── Guarantee Badges ── */}
@@ -791,10 +1033,18 @@ export default function ProductDetailScreen() {
             <View style={styles.guaranteeSeparator} />
             <View style={styles.guaranteeItem}>
               <View style={styles.guaranteeIconWrap}>
-                <Ionicons name="car-outline" size={20} color={colors.primary} />
+                <Ionicons
+                  name={isMachine ? 'car-outline' : 'storefront-outline'}
+                  size={20}
+                  color={colors.primary}
+                />
               </View>
-              <Text style={styles.guaranteeTitle}>Fast Delivery</Text>
-              <Text style={styles.guaranteeSubtitle}>Pan India</Text>
+              <Text style={styles.guaranteeTitle}>
+                {isMachine ? 'Direct Delivery' : 'Dealer Serviced'}
+              </Text>
+              <Text style={styles.guaranteeSubtitle}>
+                {isMachine ? 'Tambaram Hub' : 'Local Network'}
+              </Text>
             </View>
             <View style={styles.guaranteeSeparator} />
             <TouchableOpacity
@@ -1077,6 +1327,15 @@ export default function ProductDetailScreen() {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+      {/* ── Local Dealer Locator Modal (Customers Only) ── */}
+      {!isDealerUser && (
+        <DealerLocatorModal
+          visible={dealerModalVisible}
+          onClose={() => setDealerModalVisible(false)}
+          productName={product?.name}
+          sourceContext="product"
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -1348,7 +1607,146 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     flex: 1,
   },
 
-  // ── Quantity ──
+  // ── Bulk Quantity Selection (Approved Dealers) ──
+  bulkQuantitySection: {
+    backgroundColor: isDark ? '#1F152E' : '#F9F5FF',
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: isDark ? '#3D285C' : '#E9D5FF',
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  bulkQuantityHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.sm,
+  },
+  bulkTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: isDark ? 'rgba(234, 179, 8, 0.15)' : '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
+  bulkTagText: {
+    ...typography.labelSmall,
+    color: '#B45309',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  bulkQuantityHint: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  quickBulkRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginVertical: spacing.sm,
+  },
+  quickBulkChip: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+  },
+  quickBulkChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  quickBulkChipDisabled: {
+    opacity: 0.4,
+  },
+  quickBulkChipText: {
+    ...typography.label,
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.text,
+  },
+  quickBulkChipTextActive: {
+    color: '#FFFFFF',
+  },
+  quickBulkChipSub: {
+    ...typography.caption,
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  quickBulkChipSubActive: {
+    color: 'rgba(255,255,255,0.85)',
+  },
+  bulkInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    marginTop: spacing.xs,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+  },
+  bulkNumericInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceMuted,
+    overflow: 'hidden',
+  },
+  bulkQtyBtn: {
+    width: 36,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bulkNumericInput: {
+    ...typography.heading3,
+    fontSize: 16,
+    fontWeight: '700',
+    width: 58,
+    height: 38,
+    textAlign: 'center',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    padding: 0,
+  },
+  bulkLineTotalCol: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  bulkLineTotalLabel: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  bulkLineTotalValue: {
+    ...typography.heading3,
+    color: isDark ? colors.yellow : colors.primary,
+    fontSize: 16,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+
+  // ── Standard Customer Quantity ──
   quantitySection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1671,7 +2069,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
   },
   buyBtnText: {
     ...typography.label,
-    color: '#210440',
+    color: '#1B1F5E',
     fontWeight: '700',
   },
   disabledBtn: {
@@ -1924,5 +2322,182 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     ...typography.bodyMedium,
     color: colors.textSecondary,
     fontWeight: '600',
+  },
+
+  // ── Delivery Policy & Zones Styles ──
+  warrantyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  deliveryPolicyCard: {
+    backgroundColor: isDark ? '#191224' : '#FAF5FF',
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  deliveryPolicyDealerCard: {
+    backgroundColor: isDark ? '#1C161D' : '#FFF9F5',
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.coral,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  deliveryPolicyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    rowGap: 4,
+    marginBottom: spacing.xs,
+  },
+  deliveryBadgeDirect: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
+  deliveryBadgeDirectText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  deliveryBadgeDealer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.coral,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
+  deliveryBadgeDealerText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  deliveryTransitTime: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  dealerNoDirectText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.coral,
+  },
+  deliveryPolicyTitle: {
+    ...typography.subtitle1,
+    fontWeight: '700',
+    color: colors.text,
+    fontSize: 15,
+    marginTop: spacing.xs,
+  },
+  deliveryPolicyDesc: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    marginTop: 3,
+  },
+  zonesListRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  zoneChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: isDark ? '#261C36' : '#F3E8FF',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+  },
+  zoneChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  pincodeCheckRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+  },
+  pincodeInputStyle: {
+    flex: 1,
+    height: 38,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.card,
+    color: colors.text,
+    fontSize: 13,
+  },
+  pincodeCheckBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    height: 38,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pincodeCheckBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  pincodeResultBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    marginTop: spacing.sm,
+  },
+  pincodeResultSuccess: {
+    backgroundColor: isDark ? '#0D2114' : '#F0FDF4',
+    borderWidth: 1,
+    borderColor: 'rgba(22, 163, 74, 0.25)',
+  },
+  pincodeResultWarning: {
+    backgroundColor: isDark ? '#261B0E' : '#FEFCE8',
+    borderWidth: 1,
+    borderColor: 'rgba(202, 138, 4, 0.3)',
+  },
+  pincodeResultText: {
+    ...typography.caption,
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  dealerLocatorActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: colors.coral,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+    marginTop: spacing.md,
+  },
+  dealerLocatorActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

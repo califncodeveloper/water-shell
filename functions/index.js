@@ -621,8 +621,20 @@ exports.createRazorpayOrder = onCall({ cors: true }, async (request) => {
       throw new HttpsError('invalid-argument', 'Incomplete shipping address.');
     }
 
-    // 1. Authoritative server pricing
-    const pricing = await calculateAuthoritativePricing(items, Boolean(isDealer));
+    // Secure backend dealer verification: NEVER trust client-side dealer flags
+    let isApprovedDealer = false;
+    try {
+      const userDoc = await db.collection('users').doc(customerId).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data() || {};
+        isApprovedDealer = userData.role === 'dealer' && userData.dealerStatus === 'approved';
+      }
+    } catch (authLookupErr) {
+      console.warn('[Cloud Functions] Dealer status verification notice:', authLookupErr.message);
+    }
+
+    // 1. Authoritative server pricing with verified dealer status
+    const pricing = await calculateAuthoritativePricing(items, isApprovedDealer);
 
     // 2. Receipt identifier
     const receipt = `RCP-${Date.now().toString().slice(-8)}`;
@@ -657,7 +669,7 @@ exports.createRazorpayOrder = onCall({ cors: true }, async (request) => {
       await db.collection('orders_initiated').doc(razorpayOrderId).set({
         razorpayOrderId,
         customerId,
-        orderType: isDealer ? 'dealer' : 'customer',
+        orderType: isApprovedDealer ? 'dealer' : 'customer',
         items: pricing.items,
         pricing: {
           subtotal: pricing.subtotal,

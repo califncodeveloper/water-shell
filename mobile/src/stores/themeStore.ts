@@ -89,10 +89,12 @@ export const useThemeStore = create<ThemeState>()(
           const isDark = resolved === 'dark';
           const activeCols = isDark ? darkColors : lightColors;
           setActiveColors(activeCols);
-          state.systemScheme = sys;
-          state.resolvedTheme = resolved;
-          state.isDark = isDark;
-          state.colors = activeCols;
+          useThemeStore.setState({
+            systemScheme: sys,
+            resolvedTheme: resolved,
+            isDark,
+            colors: activeCols,
+          });
         }
       },
     }

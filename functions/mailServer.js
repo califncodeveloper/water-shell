@@ -680,6 +680,21 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Authorized Dealers API (Live Firestore synchronization & fallback)
+  if (req.method === 'GET' && (url.pathname === '/api/dealers' || url.pathname === '/dealers')) {
+    fetchApprovedDealers()
+      .then((dealers) => {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, count: dealers.length, dealers }));
+      })
+      .catch((err) => {
+        console.error('[AquaPure Mail Server] Error fetching dealers:', err.message);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message, dealers: [] }));
+      });
+    return;
+  }
+
   // Send Email Endpoint
   if (req.method === 'POST' && (url.pathname === '/api/send-email' || url.pathname === '/sendOrderEmail')) {
     let body = '';
@@ -1080,36 +1095,102 @@ async function executeOrderDeliveredEmail(db, docId, order) {
   }
 }
 
-async function startFirestoreOrderEmailWatcher() {
+let sharedFirestoreDb = null;
+let sharedFirebaseAuth = null;
+
+async function getSharedFirestore() {
+  if (sharedFirestoreDb) return sharedFirestoreDb;
   try {
     const { initializeApp, getApps } = require('firebase/app');
     const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
-    const { getFirestore, collection, onSnapshot } = require('firebase/firestore');
+    const { getFirestore } = require('firebase/firestore');
 
     const firebaseConfig = {
-      apiKey: process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-      authDomain: process.env.FIREBASE_AUTH_DOMAIN || 'waterpurifiercommerce.firebaseapp.com',
-      projectId: process.env.FIREBASE_PROJECT_ID || 'waterpurifiercommerce',
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'waterpurifiercommerce.firebasestorage.app',
-      messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '933338326697',
-      appId: process.env.FIREBASE_APP_ID,
+      apiKey: process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || process.env.EXPO_PUBLIC_FIREBASE_API_KEY || 'AIzaSyBxcIi7BRUFuQz9AMZziaBi-kv3qvxUJYo',
+      authDomain: process.env.FIREBASE_AUTH_DOMAIN || 'water-shell.firebaseapp.com',
+      projectId: process.env.FIREBASE_PROJECT_ID || 'water-shell',
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'water-shell.firebasestorage.app',
+      messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '777522670519',
+      appId: process.env.FIREBASE_APP_ID || '1:777522670519:web:ef743378f6fa625d291632',
     };
 
-    if (!firebaseConfig.apiKey) {
-      console.log('[AquaPure Mail Server] Notice: FIREBASE_API_KEY not configured. Running in HTTP dispatch mode.');
-      return;
-    }
-
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    sharedFirebaseAuth = getAuth(app);
+    sharedFirestoreDb = getFirestore(app);
 
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@aquapure.com';
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123456';
     if (adminPassword) {
-      await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
-      console.log('[AquaPure Mail Server] Authenticated with Cloud Firestore. Attaching live Order Email Watcher...');
+      try {
+        await signInWithEmailAndPassword(sharedFirebaseAuth, adminEmail, adminPassword);
+        console.log('[AquaPure Mail Server] Authenticated with Cloud Firestore as Admin.');
+      } catch (authErr) {
+        console.warn('[AquaPure Mail Server] Firestore admin auth notice:', authErr.message);
+      }
     }
+    return sharedFirestoreDb;
+  } catch (err) {
+    console.error('[AquaPure Mail Server] Failed to initialize Firestore:', err.message);
+    return null;
+  }
+}
+
+async function fetchApprovedDealers() {
+  const db = await getSharedFirestore();
+  if (!db) return [];
+  const { collection, query, where, getDocs } = require('firebase/firestore');
+  const q = query(
+    collection(db, 'users'),
+    where('role', '==', 'dealer'),
+    where('dealerStatus', '==', 'approved')
+  );
+  const snap = await getDocs(q);
+  const dealers = [];
+  snap.forEach((docSnap) => {
+    const d = docSnap.data();
+    if (d && d.role === 'dealer' && d.dealerStatus === 'approved' && d.isActive !== false) {
+      const shopAddress = (d.shopAddress || d.businessAddress || '').trim();
+      const city = (d.city || (d.addresses && d.addresses[0]?.city) || '').trim();
+      const pincode = (
+        d.pincode ||
+        (d.addresses && d.addresses[0]?.pincode) ||
+        (shopAddress.match(/\b\d{6}\b/) ? shopAddress.match(/\b\d{6}\b/)[0] : '')
+      ).trim();
+      const rawLat = typeof d.latitude === 'number' ? d.latitude : d.addresses?.[0]?.latitude;
+      const rawLng = typeof d.longitude === 'number' ? d.longitude : d.addresses?.[0]?.longitude;
+
+      dealers.push({
+        id: docSnap.id,
+        name: d.displayName || d.contactName || d.name || d.shopName || 'Authorized Dealer',
+        shopName: d.shopName || d.businessName || 'Authorized Water Shell Partner',
+        zone: d.zone || (city ? `${city} Zone` : 'Tamil Nadu'),
+        zoneId: d.zoneId || 'chennai',
+        address: shopAddress || 'Authorized Dealer Center',
+        city: city || 'Chennai',
+        pincode,
+        phone: d.phone || d.whatsapp || '',
+        whatsapp: d.whatsapp || d.phone || '',
+        email: d.email || '',
+        specialties: Array.isArray(d.specialties) && d.specialties.length > 0
+          ? d.specialties
+          : ['Genuine Accessories', 'Dealer Pickup', 'Filter Replacement'],
+        latitude: typeof rawLat === 'number' ? rawLat : undefined,
+        longitude: typeof rawLng === 'number' ? rawLng : undefined,
+        isActive: true,
+      });
+    }
+  });
+  return dealers;
+}
+
+async function startFirestoreOrderEmailWatcher() {
+  try {
+    const db = await getSharedFirestore();
+    if (!db) {
+      console.log('[AquaPure Mail Server] Notice: Firestore not connected. Running in HTTP dispatch mode.');
+      return;
+    }
+    const { collection, onSnapshot } = require('firebase/firestore');
 
     onSnapshot(collection(db, 'orders'), (snapshot) => {
       snapshot.docChanges().forEach((change) => {

@@ -45,12 +45,12 @@ export function Button({
 
   const variantStyles: Record<ButtonVariant, { bg: string; text: string; border?: string }> = {
     primary: {
-      bg: isDark ? colors.primary : colors.primary,
-      text: isDark ? '#140A20' : colors.rawWhite,
+      bg: colors.primary,
+      text: isDark ? '#101321' : colors.rawWhite,
     },
     accent: {
-      bg: colors.yellow,
-      text: '#210440',
+      bg: colors.accent,
+      text: '#1B1F5E',
     },
     secondary: {
       bg: colors.card,
@@ -94,7 +94,7 @@ export function Button({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'accent' ? '#210440' : (isDark && variant === 'primary' ? '#140A20' : colors.rawWhite)}
+          color={variant === 'accent' ? '#1B1F5E' : (isDark && variant === 'primary' ? '#101321' : colors.rawWhite)}
         />
       ) : (
         <Text

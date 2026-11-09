@@ -21,6 +21,7 @@ import {
   Ban,
   Phone,
   Save,
+  Truck,
 } from 'lucide-react';
 import { db } from '../../services/firebase';
 import {
@@ -30,6 +31,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import type { ServiceBooking, ServiceStatus } from '../../types';
+import { DeliveryService } from '../../services/deliveryService';
 import './ServicePage.css';
 
 const SERVICE_FLOW: ServiceStatus[] = [
@@ -39,6 +41,36 @@ const SERVICE_FLOW: ServiceStatus[] = [
   'completed',
 ];
 
+function parseBookingDate(val: unknown): Date | null {
+  if (!val) return null;
+  if (typeof (val as Record<string, unknown>)?.toDate === 'function') {
+    return ((val as Record<string, unknown>).toDate as () => Date)();
+  }
+  if (typeof (val as Record<string, unknown>)?.seconds === 'number') {
+    return new Date(((val as Record<string, unknown>).seconds as number) * 1000);
+  }
+  const d = new Date(val as string | number);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatBookingDate(val: unknown): string {
+  const d = parseBookingDate(val);
+  if (!d) return 'Recently';
+  return d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatBookingDateTime(val: unknown): string {
+  const d = parseBookingDate(val);
+  if (!d) return 'Recently';
+  return d.toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function ServicePage() {
   const [bookings, setBookings] = useState<ServiceBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,17 +78,22 @@ export function ServicePage() {
 
   const [statusFilter, setStatusFilter] = useState<ServiceStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [zoneFilter, setZoneFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
-  const [selectedBooking, setSelectedBooking] = useState<ServiceBooking | null>(null);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
-  // Technician notes state inside drawer
+  // Technician & Resolution notes state inside drawer
+  const [technicianInput, setTechnicianInput] = useState('');
   const [notesInput, setNotesInput] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+
+  // Derived selected booking (prevents state desynchronization and typing loss)
+  const selectedBooking = bookings.find((b) => b.id === selectedBookingId) || null;
 
   // Real-Time subscription to Firestore service_bookings
   useEffect(() => {
-    setLoading(true);
     const unsub = onSnapshot(
       collection(db, 'service_bookings'),
       (snapshot) => {
@@ -65,8 +102,8 @@ export function ServicePage() {
         );
         // Client-side sort by createdAt descending
         list.sort((a, b) => {
-          const tA = new Date(a.createdAt || 0).getTime();
-          const tB = new Date(b.createdAt || 0).getTime();
+          const tA = parseBookingDate(a.createdAt)?.getTime() || 0;
+          const tB = parseBookingDate(b.createdAt)?.getTime() || 0;
           return tB - tA;
         });
         setBookings(list);
@@ -82,22 +119,21 @@ export function ServicePage() {
     return () => unsub();
   }, []);
 
-  // Keep selectedBooking in sync with real-time updates
-  useEffect(() => {
-    if (selectedBooking) {
-      const updated = bookings.find((b) => b.id === selectedBooking.id);
-      if (updated) {
-        setSelectedBooking(updated);
-        setNotesInput(updated.notes || '');
-      }
-    }
-  }, [bookings]);
+  const handleOpenBooking = (b: ServiceBooking) => {
+    setSelectedBookingId(b.id);
+    setNotesInput(b.notes || '');
+    setTechnicianInput(b.assignedTechnician || '');
+  };
+
+  const handleCloseBooking = () => {
+    setSelectedBookingId(null);
+  };
 
   // Drawer keyboard / scroll management
   useEffect(() => {
-    if (!selectedBooking) return;
+    if (!selectedBookingId) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelectedBooking(null);
+      if (e.key === 'Escape') setSelectedBookingId(null);
     };
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -106,7 +142,7 @@ export function ServicePage() {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [selectedBooking]);
+  }, [selectedBookingId]);
 
   // Status Progression Handler
   const handleAdvanceStatus = async (
@@ -121,6 +157,7 @@ export function ServicePage() {
 
   // Direct Status Update Handler
   const handleSetStatus = async (bookingId: string, nextStatus: ServiceStatus) => {
+    setUpdatingStatusId(bookingId);
     try {
       await updateDoc(doc(db, 'service_bookings', bookingId), {
         status: nextStatus,
@@ -131,26 +168,54 @@ export function ServicePage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Database update failed';
       alert(`Could not update service status in Firestore: ${msg}`);
+    } finally {
+      setUpdatingStatusId(null);
     }
   };
 
-  // Save technician resolution notes
+  // Save technician resolution notes & technician assignment
   const handleSaveNotes = async () => {
     if (!selectedBooking) return;
     setSavingNotes(true);
     try {
       await updateDoc(doc(db, 'service_bookings', selectedBooking.id), {
         notes: notesInput.trim(),
+        assignedTechnician: technicianInput.trim(),
         updatedAt: new Date().toISOString(),
       });
-      setActionNotice('Technician dispatch notes updated in Firestore');
+      setActionNotice('Technician dispatch & resolution log updated in Firestore');
       setTimeout(() => setActionNotice(null), 3000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Notes save failed';
-      alert(`Could not save notes: ${msg}`);
+      alert(`Could not save dispatch record: ${msg}`);
     } finally {
       setSavingNotes(false);
     }
+  };
+
+  const SERVICE_TYPE_LABELS: Record<string, string> = {
+    leakage: 'Leakage',
+    low_flow: 'Low Flow',
+    filter_change: 'Filter Change',
+    general_service: 'General Service',
+    // Preserved history mappings
+    installation: 'Installation',
+    maintenance: 'Maintenance',
+    repair: 'Repair',
+    filter_replacement: 'Filter Replacement',
+    general_inquiry: 'General Inquiry',
+  };
+
+  const typeLabel = (t: string) =>
+    SERVICE_TYPE_LABELS[t] || (t || 'Service').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const getBookingZone = (b: ServiceBooking): string => {
+    if (b.deliveryZone) return b.deliveryZone;
+    if (b.address) {
+      const res = DeliveryService.validateDeliveryAddress(b.address);
+      if (res.isSupported && res.zoneName) return `${res.zoneName} Zone`;
+    }
+    return 'Chennai Zone';
   };
 
   // Filter Bookings
@@ -161,16 +226,26 @@ export function ServicePage() {
     // Type filter
     if (typeFilter !== 'all' && b.serviceType !== typeFilter) return false;
 
+    // Zone filter
+    if (zoneFilter !== 'all') {
+      const bookingZone = getBookingZone(b).toLowerCase();
+      if (!bookingZone.includes(zoneFilter.toLowerCase())) return false;
+    }
+
     // Search query
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       const idMatch = b.id.toLowerCase().includes(q);
       const nameMatch = (b.address?.fullName || '').toLowerCase().includes(q);
       const phoneMatch = (b.address?.phone || '').includes(q);
-      const typeMatch = (b.serviceType || '').toLowerCase().includes(q);
+      const rawType = b.serviceType || '';
+      const friendlyType = typeLabel(rawType).toLowerCase();
+      const typeMatch = rawType.toLowerCase().includes(q) || friendlyType.includes(q);
+      const zoneMatch = getBookingZone(b).toLowerCase().includes(q);
       const notesMatch = (b.notes || '').toLowerCase().includes(q);
+      const techMatch = (b.assignedTechnician || '').toLowerCase().includes(q);
       const cityMatch = (b.address?.city || '').toLowerCase().includes(q);
-      return idMatch || nameMatch || phoneMatch || typeMatch || notesMatch || cityMatch;
+      return idMatch || nameMatch || phoneMatch || typeMatch || zoneMatch || notesMatch || techMatch || cityMatch;
     }
 
     return true;
@@ -196,7 +271,6 @@ export function ServicePage() {
     return idx >= 0 && idx < SERVICE_FLOW.length - 1 ? SERVICE_FLOW[idx + 1] : null;
   };
 
-  const typeLabel = (t: string) => (t || 'service').replace(/_/g, ' ').toUpperCase();
   const statusLabel = (s: string) => (s || 'requested').replace(/_/g, ' ').toUpperCase();
 
   // KPIs
@@ -326,23 +400,41 @@ export function ServicePage() {
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               style={{ width: '100%', height: 42 }}
+              aria-label="Filter by service type"
             >
               <option value="all">All Service Types</option>
-              <option value="installation">Installation</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="repair">Repair</option>
-              <option value="filter_replacement">Filter Replacement</option>
-              <option value="general_inquiry">General Inquiry</option>
+              <option value="leakage">Leakage</option>
+              <option value="low_flow">Low Flow</option>
+              <option value="filter_change">Filter Change</option>
+              <option value="general_service">General Service</option>
             </select>
           </div>
 
-          {(search || statusFilter !== 'all' || typeFilter !== 'all') && (
+          {/* Delivery Zone Dropdown Filter */}
+          <div style={{ minWidth: 170 }}>
+            <select
+              className="select"
+              value={zoneFilter}
+              onChange={(e) => setZoneFilter(e.target.value)}
+              style={{ width: '100%', height: 42 }}
+              aria-label="Filter by delivery zone"
+            >
+              <option value="all">All Delivery Zones</option>
+              <option value="Chennai">Chennai Zone</option>
+              <option value="Chengalpattu">Chengalpattu Zone</option>
+              <option value="Kanchipuram">Kanchipuram Zone</option>
+              <option value="Pondicherry">Pondicherry Zone</option>
+            </select>
+          </div>
+
+          {(search || statusFilter !== 'all' || typeFilter !== 'all' || zoneFilter !== 'all') && (
             <button
               className="btn btn-secondary btn-sm"
               onClick={() => {
                 setSearch('');
                 setStatusFilter('all');
                 setTypeFilter('all');
+                setZoneFilter('all');
               }}
             >
               Reset
@@ -420,21 +512,13 @@ export function ServicePage() {
                     <tr
                       key={b.id}
                       tabIndex={0}
-                      onClick={() => {
-                        setSelectedBooking(b);
-                        setNotesInput(b.notes || '');
-                      }}
+                      onClick={() => handleOpenBooking(b)}
                       className={`sp-row ${selectedBooking?.id === b.id ? 'row-selected' : ''}`}
                     >
                       <td>
                         <span className="booking-id-badge">{b.id.slice(0, 10)}</span>
                         <div className="booking-time">
-                          {b.createdAt
-                            ? new Date(b.createdAt).toLocaleDateString('en-IN', {
-                                month: 'short',
-                                day: 'numeric',
-                              })
-                            : 'Live'}
+                          {formatBookingDate(b.createdAt)}
                         </div>
                       </td>
 
@@ -447,6 +531,28 @@ export function ServicePage() {
                         <div className="customer-city">
                           {city} {phone ? `• ${phone}` : ''}
                         </div>
+                        <div style={{ marginTop: 3 }}>
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: '2px 6px',
+                              borderRadius: 4,
+                              background: '#EDE9FE',
+                              color: '#6D28D9',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 3,
+                            }}
+                          >
+                            📍 {getBookingZone(b)}
+                          </span>
+                        </div>
+                        {b.assignedTechnician && (
+                          <div style={{ fontSize: 11, color: '#059669', fontWeight: 600, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <UserCheck size={12} /> {b.assignedTechnician}
+                          </div>
+                        )}
                       </td>
 
                       <td>
@@ -465,13 +571,20 @@ export function ServicePage() {
                           <button
                             type="button"
                             className="btn btn-primary btn-sm sp-action-btn"
+                            disabled={updatingStatusId === b.id}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleAdvanceStatus(b.id, b.status);
                             }}
                           >
-                            Mark {statusLabel(nextStatus)}
-                            <ChevronRight size={14} />
+                            {updatingStatusId === b.id ? (
+                              <RefreshCw size={13} className="spin" />
+                            ) : (
+                              <>
+                                Mark {statusLabel(nextStatus)}
+                                <ChevronRight size={14} />
+                              </>
+                            )}
                           </button>
                         ) : b.status === 'completed' ? (
                           <span className="sp-closed">
@@ -495,7 +608,7 @@ export function ServicePage() {
 
       {/* DETAIL DRAWER */}
       {selectedBooking && (
-        <div className="op-overlay" onClick={() => setSelectedBooking(null)}>
+        <div className="op-overlay" onClick={handleCloseBooking}>
           <div className="op-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="detail-header">
               <div>
@@ -506,13 +619,13 @@ export function ServicePage() {
                   {typeLabel(selectedBooking.serviceType)} Dispatch
                 </h3>
                 <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
-                  Submitted on {new Date(selectedBooking.createdAt).toLocaleString('en-IN')}
+                  Submitted on {formatBookingDateTime(selectedBooking.createdAt)}
                 </div>
               </div>
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
-                onClick={() => setSelectedBooking(null)}
+                onClick={handleCloseBooking}
                 aria-label="Close drawer"
               >
                 <X size={18} />
@@ -520,6 +633,72 @@ export function ServicePage() {
             </div>
 
             <div style={{ padding: 20, overflowY: 'auto', flex: 1 }}>
+              {/* Service Type Overview */}
+              <div
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: 10,
+                  background: 'var(--color-surface-muted)',
+                  marginBottom: 20,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    Service Requested
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text)', marginTop: 2 }}>
+                    {typeLabel(selectedBooking.serviceType)}
+                  </div>
+                </div>
+                <span className="badge badge-info" style={{ fontSize: 12, padding: '4px 10px' }}>
+                  {typeLabel(selectedBooking.serviceType)}
+                </span>
+              </div>
+
+              {/* Delivery Zone & Fulfillment Routing */}
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 10,
+                  background: 'linear-gradient(135deg, rgba(30, 77, 183, 0.04) 0%, rgba(30, 77, 183, 0.08) 100%)',
+                  border: '1px solid rgba(30, 77, 183, 0.2)',
+                  marginBottom: 20,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13, marginBottom: 8, color: '#1E4DB7' }}>
+                  <Truck size={16} />
+                  DELIVERY & SERVICE ZONE ROUTING
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                  <span>Base Origin:</span>
+                  <strong>{selectedBooking.baseOrigin || 'Tambaram Main Branch'}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                  <span>Delivery Zone:</span>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      background: '#EDE9FE',
+                      color: '#6D28D9',
+                    }}
+                  >
+                    📍 {getBookingZone(selectedBooking)}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                  <span>Dispatch Mode:</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#059669' }}>
+                    Direct Field Technician Visit
+                  </span>
+                </div>
+              </div>
+
               {/* Status Stepper */}
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 8 }}>
@@ -578,9 +757,14 @@ export function ServicePage() {
                   <button
                     type="button"
                     className="btn btn-primary btn-sm"
+                    disabled={updatingStatusId === selectedBooking.id}
                     onClick={() => handleAdvanceStatus(selectedBooking.id, selectedBooking.status)}
                   >
-                    Advance to {statusLabel(getNextStatus(selectedBooking.status)!)}
+                    {updatingStatusId === selectedBooking.id ? (
+                      <RefreshCw size={13} className="spin" />
+                    ) : (
+                      <>Advance to {statusLabel(getNextStatus(selectedBooking.status)!)}</>
+                    )}
                   </button>
                 )}
 
@@ -588,6 +772,7 @@ export function ServicePage() {
                   <button
                     type="button"
                     className="btn btn-secondary btn-sm"
+                    disabled={updatingStatusId === selectedBooking.id}
                     onClick={() => handleSetStatus(selectedBooking.id, 'completed')}
                   >
                     <CheckCircle size={14} /> Quick Mark Completed
@@ -655,10 +840,54 @@ export function ServicePage() {
                   {selectedBooking.address?.city}, {selectedBooking.address?.state} - {selectedBooking.address?.pincode}
                 </div>
                 {selectedBooking.address?.phone && (
-                  <div style={{ fontSize: 13, marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Phone size={13} /> <strong>Phone:</strong> {selectedBooking.address.phone}
+                  <div style={{ fontSize: 13, marginTop: 8 }}>
+                    <a
+                      href={`tel:${selectedBooking.address.phone}`}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        color: 'var(--color-primary)',
+                        textDecoration: 'none',
+                        fontWeight: 600,
+                        background: 'rgba(33, 4, 64, 0.08)',
+                        padding: '4px 10px',
+                        borderRadius: 6,
+                      }}
+                    >
+                      <Phone size={13} /> {selectedBooking.address.phone} (Call Customer)
+                    </a>
                   </div>
                 )}
+              </div>
+
+              {/* Assigned Field Technician */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <UserCheck size={14} style={{ color: 'var(--color-primary)' }} />
+                  ASSIGNED FIELD TECHNICIAN
+                </div>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="e.g. Ramesh Kumar (Water Shell Certified Specialist)"
+                  value={technicianInput}
+                  onChange={(e) => setTechnicianInput(e.target.value)}
+                  style={{ width: '100%', fontSize: 13, marginBottom: 6 }}
+                />
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {['Ramesh Kumar (Tech #101)', 'Sunil Sharma (RO Specialist)', 'Vikram Verma (Installation Lead)'].map((tech) => (
+                    <button
+                      key={tech}
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: 11, padding: '2px 8px' }}
+                      onClick={() => setTechnicianInput(tech)}
+                    >
+                      + {tech.split(' ')[0]}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Customer Request Notes */}
@@ -689,7 +918,7 @@ export function ServicePage() {
                 <textarea
                   className="input"
                   rows={4}
-                  placeholder="Record assigned technician, filter replacement batch, TDS measurements, or completion notes..."
+                  placeholder="Record filter replacement batch, TDS measurements, membrane pressure, or resolution notes..."
                   value={notesInput}
                   onChange={(e) => setNotesInput(e.target.value)}
                   style={{ width: '100%', resize: 'vertical', fontSize: 13, marginBottom: 8 }}
@@ -702,7 +931,7 @@ export function ServicePage() {
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                 >
                   <Save size={14} />
-                  {savingNotes ? 'Saving to Firestore...' : 'Save Resolution Log'}
+                  {savingNotes ? 'Saving to Firestore...' : 'Save Resolution & Technician Log'}
                 </button>
               </div>
             </div>

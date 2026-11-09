@@ -4,8 +4,17 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/aquapure-logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="AquaPure Official Admin Dashboard — Pure Water. Better Living." />
-    <title>AquaPure Admin Portal</title>
+    <meta name="description" content="Water Shell Official Admin Dashboard — Pure Water, Pure Life" />
+    <title>Water Shell Admin Portal</title>
+    <script>
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+      }
+      window.scrollTo(0, 0);
+      window.addEventListener('beforeunload', function () {
+        window.scrollTo(0, 0);
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

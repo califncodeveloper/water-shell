@@ -37,7 +37,6 @@ try {
   if (Notifications?.setNotificationHandler) {
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
-        shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge: false,
         shouldShowBanner: true,
@@ -259,7 +258,7 @@ export class NotificationsService {
       await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Order Placed Successfully! 💧',
-          body: `Your AquaPure order ${cleanNum} for ₹${total} has been placed. We're getting it ready!`,
+          body: `Your Water Shell order ${cleanNum} for ₹${total} has been placed. We're getting it ready!`,
           sound: 'default',
           data: {
             orderId,
@@ -285,7 +284,7 @@ export class NotificationsService {
       await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Order Confirmed! ✅',
-          body: `Your AquaPure order ${cleanNum} has been confirmed and is being prepped for dispatch.`,
+          body: `Your Water Shell order ${cleanNum} has been confirmed and is being prepped for dispatch.`,
           sound: 'default',
           data: {
             orderId,
@@ -345,7 +344,7 @@ export class NotificationsService {
       await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Order Delivered! 🎉',
-          body: `Your AquaPure order ${cleanNum} has been delivered. Thank you for choosing AquaPure for pure, healthy water!`,
+          body: `Your Water Shell order ${cleanNum} has been delivered. Thank you for choosing Water Shell for pure, healthy water!`,
           sound: 'default',
           data: {
             orderId,

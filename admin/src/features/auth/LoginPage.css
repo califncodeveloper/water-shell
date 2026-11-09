@@ -4,17 +4,17 @@
  */
 
 .login-page {
-  --lp-primary: var(--color-primary, #4a0a7a);
-  --lp-ring: rgba(122, 48, 190, 0.22);
-  --lp-surface: var(--color-white, #fff);
-  --lp-bg: var(--color-bg, #f6f4fa);
-  --lp-text: var(--color-text, #1c1b22);
-  --lp-muted: var(--color-text-secondary, #6b6878);
-  --lp-border: rgba(20, 10, 40, 0.14);
-  --lp-border-hover: rgba(20, 10, 40, 0.3);
-  --lp-error: var(--color-error, #c62828);
-  --lp-error-bg: #ffebee;
-  --lp-shadow: 0 1px 2px rgba(26, 2, 48, 0.06), 0 24px 60px -20px rgba(26, 2, 48, 0.28);
+  --lp-primary: var(--color-primary, #1B1F5E);
+  --lp-ring: rgba(27, 31, 94, 0.20);
+  --lp-surface: var(--color-white, #FFFFFF);
+  --lp-bg: var(--color-background, #F8FAFC);
+  --lp-text: var(--color-text, #1B1F5E);
+  --lp-muted: var(--color-text-secondary, #64748B);
+  --lp-border: var(--color-border, #E2E8F0);
+  --lp-border-hover: rgba(27, 31, 94, 0.35);
+  --lp-error: var(--color-error, #DC2626);
+  --lp-error-bg: #FEE2E2;
+  --lp-shadow: 0 1px 3px rgba(27, 31, 94, 0.05), 0 24px 60px -20px rgba(27, 31, 94, 0.18);
 
   /* Full-bleed: ignores any max-width/padding on #root or body */
   position: fixed;
@@ -32,15 +32,15 @@
 /* Dark appearance follows the device setting for this page only */
 @media (prefers-color-scheme: dark) {
   .login-page {
-    --lp-ring: rgba(190, 140, 255, 0.35);
-    --lp-surface: #1d1827;
-    --lp-bg: #130f1b;
-    --lp-text: #f1eef7;
-    --lp-muted: #a49fb3;
-    --lp-border: rgba(255, 255, 255, 0.16);
+    --lp-ring: rgba(115, 129, 240, 0.35);
+    --lp-surface: #191D30;
+    --lp-bg: #101321;
+    --lp-text: #FFFFFF;
+    --lp-muted: #94A3B8;
+    --lp-border: #222740;
     --lp-border-hover: rgba(255, 255, 255, 0.32);
-    --lp-error: #ff8a80;
-    --lp-error-bg: rgba(255, 82, 82, 0.12);
+    --lp-error: #F87171;
+    --lp-error-bg: rgba(239, 68, 68, 0.15);
     --lp-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 24px 60px -20px rgba(0, 0, 0, 0.7);
   }
 }
@@ -57,7 +57,7 @@
   isolation: isolate;
   padding: clamp(32px, 6vw, 88px) clamp(32px, 6vw, 88px) clamp(160px, 22vh, 220px);
   color: #fff;
-  background: linear-gradient(150deg, var(--lp-primary) 0%, #3a0660 48%, #1a0230 100%);
+  background: linear-gradient(150deg, #1B1F5E 0%, #15184B 48%, #0E1033 100%);
 }
 
 .login-glow {
@@ -66,7 +66,7 @@
   z-index: -1;
   pointer-events: none;
   background: radial-gradient(520px circle at var(--mx) var(--my),
-      rgba(190, 140, 255, 0.28),
+      rgba(46, 139, 87, 0.25),
       transparent 62%);
   transition: background-position 0.3s ease;
 }
@@ -577,13 +577,13 @@
 /* Brighter primary button in dark appearance so it stands out from the card */
 @media (prefers-color-scheme: dark) {
   .login-page .login-submit:not(:disabled) {
-    background: linear-gradient(135deg, #9a4de0 0%, #6a24b3 100%);
+    background: linear-gradient(135deg, #2D3487 0%, #1B1F5E 100%);
     border-color: transparent;
     color: #fff;
   }
 
   .login-page .login-submit:not(:disabled):hover {
-    box-shadow: 0 10px 24px -6px rgba(154, 77, 224, 0.55);
+    box-shadow: 0 10px 24px -6px rgba(45, 52, 135, 0.55);
   }
 }
 

@@ -77,7 +77,7 @@ export default function OrderSuccessScreen() {
 
           <Text style={styles.title}>Order Placed Successfully!</Text>
           <Text style={styles.subtitle}>
-            Thank you for choosing AquaPure. Your water purification order has been confirmed.
+            Thank you for choosing Water Shell. Your water purification order has been confirmed.
           </Text>
 
           <View style={styles.detailsCard}>
@@ -226,7 +226,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       ...typography.labelSmall,
       color: colors.success,
       fontWeight: '800',
-      backgroundColor: isDark ? 'rgba(46, 125, 50, 0.25)' : '#E8F5E9',
+      backgroundColor: isDark ? 'rgba(62, 175, 118, 0.25)' : '#E8F5EE',
       paddingHorizontal: spacing.sm,
       paddingVertical: 2,
       borderRadius: radius.full,

@@ -136,7 +136,7 @@ export function buildOrderPlacedHtml(params: SendOrderConfirmationParams): strin
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AquaPure Order Confirmation</title>
+  <title>Water Shell Order Confirmation</title>
 </head>
 <body style="margin:0;padding:0;background-color:#F1F5F9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1E293B;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#F1F5F9;padding:24px 12px;">
@@ -144,9 +144,9 @@ export function buildOrderPlacedHtml(params: SendOrderConfirmationParams): strin
       <td align="center">
         <table role="presentation" width="100%" style="max-width:600px;background-color:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 14px rgba(0,0,0,0.05);" cellspacing="0" cellpadding="0">
           <tr>
-            <td style="background:linear-gradient(135deg, #0284C7 0%, #0369A1 100%);padding:28px 24px;text-align:center;color:#FFFFFF;">
-              <div style="font-size:26px;font-weight:800;letter-spacing:1px;margin:0;">💧 AQUAPURE</div>
-              <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#BAE6FD;margin-top:4px;">Pure &amp; Healthy Water Guaranteed</div>
+            <td style="background:linear-gradient(135deg, #1B1F5E 0%, #2E8B57 100%);padding:28px 24px;text-align:center;color:#FFFFFF;">
+              <div style="font-size:26px;font-weight:800;letter-spacing:1px;margin:0;">💧 WATER SHELL</div>
+              <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#BAE6FD;margin-top:4px;">Pure Water, Pure Life</div>
             </td>
           </tr>
           <tr>
@@ -160,7 +160,7 @@ export function buildOrderPlacedHtml(params: SendOrderConfirmationParams): strin
             <td style="padding:24px 24px 16px;">
               <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;">
                 Hello <strong>${params.toName}</strong>,<br>
-                Your AquaPure order has been confirmed. Below are your complete order details.
+                Your Water Shell order has been confirmed. Below are your complete order details.
               </p>
               <table width="100%" style="background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 16px;margin-bottom:20px;" cellspacing="0" cellpadding="4">
                 <tr>
@@ -173,7 +173,7 @@ export function buildOrderPlacedHtml(params: SendOrderConfirmationParams): strin
                 </tr>
                 <tr>
                   <td style="font-size:13px;color:#64748B;">Payment Method:</td>
-                  <td align="right" style="font-size:13px;font-weight:600;color:#0284C7;">${paymentMethod}</td>
+                  <td align="right" style="font-size:13px;font-weight:600;color:#1B1F5E;">${paymentMethod}</td>
                 </tr>
                 <tr>
                   <td style="font-size:13px;color:#64748B;">Payment Status:</td>
@@ -184,7 +184,7 @@ export function buildOrderPlacedHtml(params: SendOrderConfirmationParams): strin
                   <td align="right" style="font-size:13px;font-weight:700;color:#0F172A;">2–4 Business Days</td>
                 </tr>
               </table>
-              <h3 style="margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#64748B;font-weight:700;border-bottom:2px solid #0284C7;padding-bottom:6px;">
+              <h3 style="margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#64748B;font-weight:700;border-bottom:2px solid #1B1F5E;padding-bottom:6px;">
                 Ordered Items
               </h3>
               <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:16px;">
@@ -207,9 +207,9 @@ export function buildOrderPlacedHtml(params: SendOrderConfirmationParams): strin
                   <td style="font-size:13px;color:#64748B;">Delivery Fee:</td>
                   <td align="right" style="font-size:13px;color:#16A34A;font-weight:600;">${deliveryText}</td>
                 </tr>
-                <tr style="border-top:2px solid #0284C7;">
+                <tr style="border-top:2px solid #1B1F5E;">
                   <td style="font-size:16px;color:#0F172A;font-weight:800;padding-top:10px;">Grand Total:</td>
-                  <td align="right" style="font-size:18px;color:#0284C7;font-weight:800;padding-top:10px;">₹${total}</td>
+                  <td align="right" style="font-size:18px;color:#1B1F5E;font-weight:800;padding-top:10px;">₹${total}</td>
                 </tr>
               </table>
               <div style="background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:16px;margin-top:20px;">
@@ -219,19 +219,19 @@ export function buildOrderPlacedHtml(params: SendOrderConfirmationParams): strin
                 ${params.phone ? `<div style="font-size:13px;color:#475569;margin-top:4px;">📞 ${params.phone}</div>` : ''}
                 <div style="font-size:13px;color:#475569;">✉️ ${params.toEmail}</div>
               </div>
-              <div style="background-color:#EFF6FF;border-left:4px solid #0284C7;border-radius:4px;padding:14px 16px;margin-top:20px;">
+              <div style="background-color:#EFF6FF;border-left:4px solid #1B1F5E;border-radius:4px;padding:14px 16px;margin-top:20px;">
                 <div style="font-size:14px;font-weight:700;color:#1E40AF;margin-bottom:4px;">🛠️ Free Certified Installation Included</div>
                 <div style="font-size:13px;color:#3B82F6;line-height:1.5;">
-                  All AquaPure purifiers include complimentary home installation by certified technicians. You can track this order or book an appointment directly from the AquaPure mobile app!
+                  All Water Shell purifiers include complimentary home installation by certified technicians. You can track this order or book an appointment directly from the Water Shell mobile app!
                 </div>
               </div>
             </td>
           </tr>
           <tr>
             <td style="background-color:#0F172A;padding:24px;text-align:center;color:#94A3B8;font-size:12px;line-height:1.6;">
-              <div style="font-weight:700;color:#FFFFFF;margin-bottom:4px;">AquaPure — Drink Pure, Live Healthy</div>
-              <div>Customer Care: support@aquapure.com | Helpline: 1800-AQUAPURE</div>
-              <div style="margin-top:8px;font-size:11px;color:#64748B;">© 2026 AquaPure Inc. All rights reserved.</div>
+              <div style="font-weight:700;color:#FFFFFF;margin-bottom:4px;">Water Shell — Pure Water, Pure Life</div>
+              <div>Customer Care: support@watershell.com | Helpline: 1800-WATERSHELL</div>
+              <div style="margin-top:8px;font-size:11px;color:#64748B;">© 2026 Water Shell Inc. All rights reserved.</div>
             </td>
           </tr>
         </table>
@@ -264,13 +264,13 @@ export function buildOrderPlacedText(params: SendOrderConfirmationParams): strin
   }
 
   return `═══════════════════════════════════════════════════════════
-                 💧 AQUAPURE WATER PURIFIERS
+                 💧 WATER SHELL WATER PURIFIERS
                Pure & Healthy Water Guaranteed
 ═══════════════════════════════════════════════════════════
 
 Hello ${params.toName},
 
-Thank you for choosing AquaPure! Your order has been placed 
+Thank you for choosing Water Shell! Your order has been placed 
 and confirmed. Below are your complete order details.
 
 ───────────────────────────────────────────────────────────
@@ -306,13 +306,13 @@ Email     : ${params.toEmail}
 🛠️ FREE CERTIFIED INSTALLATION INCLUDED
 ───────────────────────────────────────────────────────────
 Your purchase includes complimentary home installation by 
-certified AquaPure technicians. You can schedule your preferred
-installation date anytime directly in the AquaPure mobile app.
+certified Water Shell technicians. You can schedule your preferred
+installation date anytime directly in the Water Shell mobile app.
 
-Need help? Email support@aquapure.com or call 1800-AQUAPURE.
+Need help? Email support@watershell.com or call 1800-WATERSHELL.
 ═══════════════════════════════════════════════════════════
                  Drink Pure, Stay Healthy!
-                     Team AquaPure
+                     Team Water Shell
 ═══════════════════════════════════════════════════════════`;
 }
 
@@ -333,7 +333,7 @@ export function buildOrderDeliveredHtml(params: SendOrderDeliveredParams): strin
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AquaPure Order Delivered</title>
+  <title>Water Shell Order Delivered</title>
 </head>
 <body style="margin:0;padding:0;background-color:#F1F5F9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1E293B;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#F1F5F9;padding:24px 12px;">
@@ -342,8 +342,8 @@ export function buildOrderDeliveredHtml(params: SendOrderDeliveredParams): strin
         <table role="presentation" width="100%" style="max-width:600px;background-color:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 14px rgba(0,0,0,0.05);" cellspacing="0" cellpadding="0">
           <tr>
             <td style="background:linear-gradient(135deg, #059669 0%, #047857 100%);padding:28px 24px;text-align:center;color:#FFFFFF;">
-              <div style="font-size:26px;font-weight:800;letter-spacing:1px;margin:0;">💧 AQUAPURE</div>
-              <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#A7F3D0;margin-top:4px;">Pure &amp; Healthy Water Guaranteed</div>
+              <div style="font-size:26px;font-weight:800;letter-spacing:1px;margin:0;">💧 WATER SHELL</div>
+              <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#A7F3D0;margin-top:4px;">Pure Water, Pure Life</div>
             </td>
           </tr>
           <tr>
@@ -357,7 +357,7 @@ export function buildOrderDeliveredHtml(params: SendOrderDeliveredParams): strin
             <td style="padding:24px 24px 16px;">
               <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;">
                 Hello <strong>${params.toName}</strong>,<br>
-                Your AquaPure order #${params.orderId} has been successfully delivered and confirmed received. Welcome to fresh, crystal-clear, mineral-rich drinking water!
+                Your Water Shell order #${params.orderId} has been successfully delivered and confirmed received. Welcome to fresh, crystal-clear, mineral-rich drinking water!
               </p>
               <div style="background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:16px;margin-bottom:20px;">
                 <div style="font-size:13px;color:#64748B;">Delivered To:</div>
@@ -365,22 +365,22 @@ export function buildOrderDeliveredHtml(params: SendOrderDeliveredParams): strin
                 <div style="font-size:13px;color:#475569;margin-top:2px;">${params.deliveryAddress}</div>
                 <div style="font-size:13px;color:#64748B;margin-top:8px;">Delivered Date &amp; Time: <strong style="color:#0F172A;">${deliveryDateTime}</strong></div>
                 <div style="font-size:13px;color:#64748B;margin-top:4px;">Payment Status: <strong style="color:#16A34A;">${paymentBadge}</strong></div>
-                <div style="font-size:13px;color:#64748B;margin-top:4px;">Total Order Value: <strong style="color:#0284C7;">₹${total}</strong></div>
+                <div style="font-size:13px;color:#64748B;margin-top:4px;">Total Order Value: <strong style="color:#1B1F5E;">₹${total}</strong></div>
               </div>
               <h3 style="margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#64748B;font-weight:700;">Delivered Items:</h3>
               <ul style="margin:0 0 20px;padding-left:20px;color:#334155;font-size:14px;line-height:1.6;">${itemsHtml}</ul>
-              <div style="background-color:#EFF6FF;border-left:4px solid #0284C7;border-radius:4px;padding:16px;margin-bottom:20px;">
+              <div style="background-color:#EFF6FF;border-left:4px solid #1B1F5E;border-radius:4px;padding:16px;margin-bottom:20px;">
                 <div style="font-size:14px;font-weight:700;color:#1E40AF;margin-bottom:4px;">🛠️ Schedule Your Free Installation</div>
                 <div style="font-size:13px;color:#3B82F6;line-height:1.5;">
-                  Need technician setup, TDS calibration, or wall mounting? You can book a certified AquaPure technician directly from the AquaPure mobile app under <strong>Services &gt; Book Technician</strong> at zero extra charge!
+                  Need technician setup, TDS calibration, or wall mounting? You can book a certified Water Shell technician directly from the Water Shell mobile app under <strong>Services &gt; Book Technician</strong> at zero extra charge!
                 </div>
               </div>
             </td>
           </tr>
           <tr>
             <td style="background-color:#0F172A;padding:24px;text-align:center;color:#94A3B8;font-size:12px;line-height:1.6;">
-              <div style="font-weight:700;color:#FFFFFF;margin-bottom:4px;">AquaPure Technologies</div>
-              <div>Support: support@aquapure.com • Toll-free: 1800-AQUAPURE</div>
+              <div style="font-weight:700;color:#FFFFFF;margin-bottom:4px;">Water Shell Technologies</div>
+              <div>Support: support@watershell.com • Toll-free: 1800-WATERSHELL</div>
               <div style="margin-top:8px;font-size:11px;color:#64748B;">Drink Pure, Stay Healthy!</div>
             </td>
           </tr>
@@ -397,13 +397,13 @@ export function buildOrderDeliveredText(params: SendOrderDeliveredParams): strin
   const total = formatCurrency(params.totalAmount);
 
   return `═══════════════════════════════════════════════════════════
-                 💧 AQUAPURE WATER PURIFIERS
+                 💧 WATER SHELL WATER PURIFIERS
                Pure & Healthy Water Guaranteed
 ═══════════════════════════════════════════════════════════
 
 Hello ${params.toName},
 
-Your AquaPure order #${params.orderId} has been successfully 
+Your Water Shell order #${params.orderId} has been successfully 
 delivered and confirmed received!
 
 ───────────────────────────────────────────────────────────
@@ -420,14 +420,14 @@ delivered and confirmed received!
 🛠️ FREE CERTIFIED INSTALLATION & SUPPORT
 ───────────────────────────────────────────────────────────
 Need installation, filter check, or TDS calibration? 
-You can book a certified AquaPure technician directly from 
-the AquaPure mobile app at no additional cost.
+You can book a certified Water Shell technician directly from 
+the Water Shell mobile app at no additional cost.
 
 Questions or assistance? 
-Email: support@aquapure.com | Helpline: 1800-AQUAPURE
+Email: support@watershell.com | Helpline: 1800-WATERSHELL
 ═══════════════════════════════════════════════════════════
                  Drink Pure, Stay Healthy!
-                     Team AquaPure
+                     Team Water Shell
 ═══════════════════════════════════════════════════════════`;
 }
 
@@ -451,7 +451,7 @@ export function buildWholesaleOrderPlacedHtml(params: SendOrderConfirmationParam
         <tr>
           <td style="padding:10px 8px;border-bottom:1px solid #E2E8F0;font-size:13px;color:#0F172A;font-weight:600;">
             ${it.name}
-            <div style="font-size:11px;color:#0284C7;font-weight:600;">Wholesale Tier Pricing</div>
+            <div style="font-size:11px;color:#1B1F5E;font-weight:600;">Wholesale Tier Pricing</div>
           </td>
           <td style="padding:10px 8px;border-bottom:1px solid #E2E8F0;font-size:13px;color:#475569;text-align:center;font-weight:700;">
             ${it.quantity}
@@ -478,7 +478,7 @@ export function buildWholesaleOrderPlacedHtml(params: SendOrderConfirmationParam
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AquaPure Wholesale Order Confirmation</title>
+  <title>Water Shell Wholesale Order Confirmation</title>
 </head>
 <body style="margin:0;padding:0;background-color:#F1F5F9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1E293B;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#F1F5F9;padding:24px 12px;">
@@ -487,13 +487,13 @@ export function buildWholesaleOrderPlacedHtml(params: SendOrderConfirmationParam
         <table role="presentation" width="100%" style="max-width:600px;background-color:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #CBD5E1;box-shadow:0 4px 14px rgba(0,0,0,0.06);" cellspacing="0" cellpadding="0">
           <tr>
             <td style="background:linear-gradient(135deg, #1E293B 0%, #0F172A 100%);padding:28px 24px;text-align:center;color:#FFFFFF;border-bottom:3px solid #38BDF8;">
-              <div style="font-size:24px;font-weight:800;letter-spacing:1px;margin:0;">🏢 AQUAPURE B2B WHOLESALE</div>
+              <div style="font-size:24px;font-weight:800;letter-spacing:1px;margin:0;">🏢 WATER SHELL B2B WHOLESALE</div>
               <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#94A3B8;margin-top:4px;">Authorized Dealer Partner Network</div>
             </td>
           </tr>
           <tr>
             <td style="background-color:#F0FDF4;border-bottom:1px solid #BBF7D0;padding:16px 24px;text-align:center;">
-              <span style="display:inline-block;background-color:#0284C7;color:#FFFFFF;font-size:11px;font-weight:700;padding:3px 12px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.5px;">✓ Wholesale Order Confirmed</span>
+              <span style="display:inline-block;background-color:#1B1F5E;color:#FFFFFF;font-size:11px;font-weight:700;padding:3px 12px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.5px;">✓ Wholesale Order Confirmed</span>
               <h2 style="margin:8px 0 2px;font-size:20px;color:#0F172A;font-weight:800;">Wholesale Consignment Booked</h2>
               <p style="margin:0;font-size:13px;color:#475569;">Order #${params.orderId} • ${orderDate}</p>
             </td>
@@ -502,7 +502,7 @@ export function buildWholesaleOrderPlacedHtml(params: SendOrderConfirmationParam
             <td style="padding:24px 24px 16px;">
               <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;">
                 Hello <strong>${params.toName}</strong> (Authorized Dealer),<br>
-                Your wholesale dealer bulk order has been successfully created and registered with AquaPure Distribution. Below is your official wholesale purchase breakdown.
+                Your wholesale dealer bulk order has been successfully created and registered with Water Shell Distribution. Below is your official wholesale purchase breakdown.
               </p>
               <table width="100%" style="background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 16px;margin-bottom:20px;" cellspacing="0" cellpadding="4">
                 <tr>
@@ -511,7 +511,7 @@ export function buildWholesaleOrderPlacedHtml(params: SendOrderConfirmationParam
                 </tr>
                 <tr>
                   <td style="font-size:13px;color:#64748B;">Order Type:</td>
-                  <td align="right" style="font-size:13px;font-weight:700;color:#0284C7;">WHOLESALE / DEALER ORDER</td>
+                  <td align="right" style="font-size:13px;font-weight:700;color:#1B1F5E;">WHOLESALE / DEALER ORDER</td>
                 </tr>
                 <tr>
                   <td style="font-size:13px;color:#64748B;">Order Date &amp; Time:</td>
@@ -527,7 +527,7 @@ export function buildWholesaleOrderPlacedHtml(params: SendOrderConfirmationParam
                 </tr>
               </table>
 
-              <h3 style="margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#475569;font-weight:700;border-bottom:2px solid #0284C7;padding-bottom:6px;">
+              <h3 style="margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#475569;font-weight:700;border-bottom:2px solid #1B1F5E;padding-bottom:6px;">
                 Wholesale Product Consignment
               </h3>
               <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:16px;">
@@ -553,7 +553,7 @@ export function buildWholesaleOrderPlacedHtml(params: SendOrderConfirmationParam
                 </tr>
                 <tr style="border-top:2px solid #0F172A;">
                   <td style="font-size:16px;color:#0F172A;font-weight:800;padding-top:10px;">Total Invoice Amount:</td>
-                  <td align="right" style="font-size:18px;color:#0284C7;font-weight:800;padding-top:10px;">₹${total}</td>
+                  <td align="right" style="font-size:18px;color:#1B1F5E;font-weight:800;padding-top:10px;">₹${total}</td>
                 </tr>
               </table>
 
@@ -575,9 +575,9 @@ export function buildWholesaleOrderPlacedHtml(params: SendOrderConfirmationParam
           </tr>
           <tr>
             <td style="background-color:#0F172A;padding:24px;text-align:center;color:#94A3B8;font-size:12px;line-height:1.6;">
-              <div style="font-weight:700;color:#FFFFFF;margin-bottom:4px;">AquaPure B2B Distribution Systems</div>
-              <div>Dealer Desk: dealers@aquapure.com • B2B Helpline: 1800-AQUAPURE-B2B</div>
-              <div style="margin-top:8px;font-size:11px;color:#64748B;">AquaPure Commercial Wholesale Division</div>
+              <div style="font-weight:700;color:#FFFFFF;margin-bottom:4px;">Water Shell B2B Distribution Systems</div>
+              <div>Dealer Desk: dealers@watershell.com • B2B Helpline: 1800-WATERSHELL-B2B</div>
+              <div style="margin-top:8px;font-size:11px;color:#64748B;">Water Shell Commercial Wholesale Division</div>
             </td>
           </tr>
         </table>
@@ -610,14 +610,14 @@ export function buildWholesaleOrderPlacedText(params: SendOrderConfirmationParam
   }
 
   return `═══════════════════════════════════════════════════════════
-        🏢 AQUAPURE B2B WHOLESALE DEALER NETWORK
+        🏢 WATER SHELL B2B WHOLESALE DEALER NETWORK
          Authorized Wholesale Dealer Order Confirmation
 ═══════════════════════════════════════════════════════════
 
 Hello ${params.toName} (Authorized Dealer),
 
 Your wholesale order #${params.orderId} has been successfully created and 
-confirmed in the AquaPure B2B Distribution System.
+confirmed in the Water Shell B2B Distribution System.
 
 ───────────────────────────────────────────────────────────
 📦 WHOLESALE ORDER DETAILS
@@ -654,7 +654,7 @@ Registered Email  : ${params.toEmail}
 Your bulk consignment is being staged at the primary regional warehouse.
 Commercial B2B tax invoice is generated with GST input credit.
 ═══════════════════════════════════════════════════════════
-           AquaPure Commercial Wholesale Division
+           Water Shell Commercial Wholesale Division
 ═══════════════════════════════════════════════════════════`;
 }
 
@@ -674,7 +674,7 @@ export function buildWholesaleOrderDeliveredHtml(params: SendOrderDeliveredParam
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AquaPure Wholesale Order Delivered</title>
+  <title>Water Shell Wholesale Order Delivered</title>
 </head>
 <body style="margin:0;padding:0;background-color:#F1F5F9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1E293B;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#F1F5F9;padding:24px 12px;">
@@ -683,7 +683,7 @@ export function buildWholesaleOrderDeliveredHtml(params: SendOrderDeliveredParam
         <table role="presentation" width="100%" style="max-width:600px;background-color:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #CBD5E1;box-shadow:0 4px 14px rgba(0,0,0,0.06);" cellspacing="0" cellpadding="0">
           <tr>
             <td style="background:linear-gradient(135deg, #1E293B 0%, #0F172A 100%);padding:28px 24px;text-align:center;color:#FFFFFF;border-bottom:3px solid #10B981;">
-              <div style="font-size:24px;font-weight:800;letter-spacing:1px;margin:0;">🏢 AQUAPURE B2B WHOLESALE</div>
+              <div style="font-size:24px;font-weight:800;letter-spacing:1px;margin:0;">🏢 WATER SHELL B2B WHOLESALE</div>
               <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#6EE7B7;margin-top:4px;">Consignment Delivered &amp; Received</div>
             </td>
           </tr>
@@ -698,7 +698,7 @@ export function buildWholesaleOrderDeliveredHtml(params: SendOrderDeliveredParam
             <td style="padding:24px 24px 16px;">
               <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;">
                 Hello <strong>${params.toName}</strong> (Authorized Dealer),<br>
-                This confirms that your AquaPure wholesale consignment under Order #${params.orderId} has been successfully delivered to your registered facility and confirmed received.
+                This confirms that your Water Shell wholesale consignment under Order #${params.orderId} has been successfully delivered to your registered facility and confirmed received.
               </p>
               <div style="background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:16px;margin-bottom:20px;">
                 <div style="font-size:13px;color:#64748B;">Order Identifier:</div>
@@ -709,11 +709,11 @@ export function buildWholesaleOrderDeliveredHtml(params: SendOrderDeliveredParam
                 <div style="font-size:13px;color:#64748B;margin-top:8px;">Delivered Date &amp; Time: <strong style="color:#0F172A;">${deliveryDateTime}</strong></div>
                 <div style="font-size:13px;color:#64748B;margin-top:4px;">Delivery Status: <strong style="color:#059669;">Delivered &amp; Received</strong></div>
                 <div style="font-size:13px;color:#64748B;margin-top:4px;">Payment Status: <strong style="color:#16A34A;">${paymentBadge}</strong></div>
-                <div style="font-size:13px;color:#64748B;margin-top:4px;">Total Consignment Value: <strong style="color:#0284C7;">₹${total}</strong></div>
+                <div style="font-size:13px;color:#64748B;margin-top:4px;">Total Consignment Value: <strong style="color:#1B1F5E;">₹${total}</strong></div>
               </div>
               <h3 style="margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#475569;font-weight:700;">Delivered Consignment Items:</h3>
               <ul style="margin:0 0 20px;padding-left:20px;color:#334155;font-size:14px;line-height:1.6;">${itemsHtml}</ul>
-              <div style="background-color:#EFF6FF;border-left:4px solid #0284C7;border-radius:4px;padding:16px;margin-bottom:20px;">
+              <div style="background-color:#EFF6FF;border-left:4px solid #1B1F5E;border-radius:4px;padding:16px;margin-bottom:20px;">
                 <div style="font-size:14px;font-weight:700;color:#1E40AF;margin-bottom:4px;">📋 Inventory &amp; Stock Ledger Notice</div>
                 <div style="font-size:13px;color:#3B82F6;line-height:1.5;">
                   Please verify physical package integrity and update your dealership inventory. For warranty claims or wholesale restocking, contact your dedicated B2B account desk.
@@ -723,9 +723,9 @@ export function buildWholesaleOrderDeliveredHtml(params: SendOrderDeliveredParam
           </tr>
           <tr>
             <td style="background-color:#0F172A;padding:24px;text-align:center;color:#94A3B8;font-size:12px;line-height:1.6;">
-              <div style="font-weight:700;color:#FFFFFF;margin-bottom:4px;">AquaPure B2B Distribution Systems</div>
-              <div>Dealer Desk: dealers@aquapure.com • B2B Helpline: 1800-AQUAPURE-B2B</div>
-              <div style="margin-top:8px;font-size:11px;color:#64748B;">AquaPure Commercial Wholesale Division</div>
+              <div style="font-weight:700;color:#FFFFFF;margin-bottom:4px;">Water Shell B2B Distribution Systems</div>
+              <div>Dealer Desk: dealers@watershell.com • B2B Helpline: 1800-WATERSHELL-B2B</div>
+              <div style="margin-top:8px;font-size:11px;color:#64748B;">Water Shell Commercial Wholesale Division</div>
             </td>
           </tr>
         </table>
@@ -741,13 +741,13 @@ export function buildWholesaleOrderDeliveredText(params: SendOrderDeliveredParam
   const total = formatCurrency(params.totalAmount);
 
   return `═══════════════════════════════════════════════════════════
-        🏢 AQUAPURE B2B WHOLESALE DEALER NETWORK
+        🏢 WATER SHELL B2B WHOLESALE DEALER NETWORK
           Authorized Dealer Consignment Receipt
 ═══════════════════════════════════════════════════════════
 
 Hello ${params.toName} (Authorized Dealer),
 
-Your AquaPure wholesale consignment under Order #${params.orderId} has been 
+Your Water Shell wholesale consignment under Order #${params.orderId} has been 
 successfully delivered to your registered facility and confirmed received!
 
 ───────────────────────────────────────────────────────────
@@ -766,9 +766,9 @@ successfully delivered to your registered facility and confirmed received!
 📋 DEALERSHIP INVENTORY & STOCK LEDGER
 ───────────────────────────────────────────────────────────
 Please verify physical package seals and update your dealership stock ledger.
-For bulk restocking or warranty claims: dealers@aquapure.com | 1800-AQUAPURE-B2B
+For bulk restocking or warranty claims: dealers@watershell.com | 1800-WATERSHELL-B2B
 ═══════════════════════════════════════════════════════════
-           AquaPure Commercial Wholesale Division
+           Water Shell Commercial Wholesale Division
 ═══════════════════════════════════════════════════════════`;
 }
 
@@ -781,10 +781,10 @@ export class EmailService {
    */
   private static async dispatchViaMailServer(payload: any): Promise<boolean> {
     const rawEndpoints = [
-      (import.meta as any).env?.VITE_MAIL_API_URL,
-      'https://aquapure-mail-api.onrender.com/api/send-email',
       'http://localhost:5055/api/send-email',
       'http://127.0.0.1:5055/api/send-email',
+      'http://10.68.181.57:5055/api/send-email',
+      (import.meta as any).env?.VITE_MAIL_API_URL,
     ].filter(Boolean) as string[];
 
     const endpoints = Array.from(new Set(rawEndpoints));

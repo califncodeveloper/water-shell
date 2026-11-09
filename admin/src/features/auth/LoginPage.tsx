@@ -125,7 +125,7 @@ export function LoginPage() {
           <span className="login-chip">
             <ShieldIcon /> Staff-only access
           </span>
-          <h1 className="login-title">AquaPure Admin</h1>
+          <h1 className="login-title">Water Shell Admin</h1>
           <p className="login-subtitle">
             Staff-only dashboard for order fulfillment, dealer approvals, and service dispatch
           </p>
@@ -182,7 +182,7 @@ export function LoginPage() {
                   id="admin-email"
                   type="email"
                   className="input"
-                  placeholder="admin@aquapure.com"
+                  placeholder="admin@watershell.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onBlur={() => setEmailTouched(true)}

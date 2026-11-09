@@ -19,19 +19,19 @@ export function StatusBadge({ label, variant = 'neutral' }: StatusBadgeProps) {
 
   const variantColors: Record<BadgeVariant, { bg: string; text: string }> = {
     success: {
-      bg: isDark ? 'rgba(52, 211, 153, 0.18)' : '#E8F5E9',
+      bg: isDark ? 'rgba(62, 175, 118, 0.2)' : '#E8F5EE',
       text: colors.success,
     },
     warning: {
-      bg: isDark ? 'rgba(251, 191, 36, 0.18)' : '#FFF8E1',
+      bg: isDark ? 'rgba(245, 166, 35, 0.2)' : '#FEF5E7',
       text: colors.warning,
     },
     error: {
-      bg: isDark ? 'rgba(248, 113, 113, 0.18)' : '#FFEBEE',
+      bg: isDark ? 'rgba(248, 113, 113, 0.2)' : '#FEE2E2',
       text: colors.error,
     },
     info: {
-      bg: isDark ? 'rgba(129, 140, 248, 0.18)' : '#EDE7F6',
+      bg: isDark ? 'rgba(115, 129, 240, 0.2)' : '#EEF0F9',
       text: colors.info,
     },
     neutral: {

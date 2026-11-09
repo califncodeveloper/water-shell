@@ -31,6 +31,13 @@ import { collection, addDoc } from 'firebase/firestore';
 import { NotificationsService } from '@/services/notificationsService';
 import { EmailService } from '@/services/emailService';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import {
+  DeliveryService,
+  TAMBARAM_BASE_ORIGIN,
+  SUPPORTED_DELIVERY_ZONES,
+  DeliveryValidationResult,
+  useDeliveryZones,
+} from '@/services/deliveryService';
 
 interface ServiceOption {
   type: ServiceType;
@@ -42,40 +49,40 @@ interface ServiceOption {
 
 const SERVICE_OPTIONS: ServiceOption[] = [
   {
-    type: 'installation',
-    title: 'New Purifier Installation',
-    description: 'Wall mounting, inlet plumbing adapter, drain pipe setup & TDS calibration',
-    icon: 'construct-outline',
-    fee: 'FREE with new unit / ₹399',
+    type: 'leakage',
+    title: 'Leakage',
+    description: 'Fix pipe leaks, connector drips, membrane housing cracks & valve leakage',
+    icon: 'water-outline',
+    fee: '₹299 Inspection Fee',
   },
   {
-    type: 'filter_replacement',
-    title: 'Filter & Membrane Replacement',
-    description: 'Comprehensive filter cartridge change, housing sanitization & flushing',
+    type: 'low_flow',
+    title: 'Low Flow',
+    description: 'Diagnose slow water dispense, booster pump pressure drop & clogged pre-filters',
+    icon: 'speedometer-outline',
+    fee: '₹249 Inspection Fee',
+  },
+  {
+    type: 'filter_change',
+    title: 'Filter Change',
+    description: 'Comprehensive filter cartridge change, membrane check & housing sanitization',
     icon: 'refresh-circle-outline',
     fee: '₹249 + Parts',
   },
   {
-    type: 'repair',
-    title: 'Breakdown / Leakage Repair',
-    description: 'Pump troubleshooting, solenoid valve check, SMPS adapter repair & leak seal',
-    icon: 'alert-circle-outline',
-    fee: '₹299 Inspection Fee',
-  },
-  {
-    type: 'maintenance',
-    title: 'Periodic Maintenance & Cleaning',
-    description: 'Deep tank chemical descaling, UV lamp test, pressure check & water purity test',
+    type: 'general_service',
+    title: 'General Service',
+    description: 'Multi-point maintenance checkup, tank sanitization, TDS calibration & purity test',
     icon: 'shield-checkmark-outline',
     fee: '₹349 Comprehensive',
   },
-  {
-    type: 'general_inquiry',
-    title: 'Water Quality & TDS Health Check',
-    description: 'On-site digital TDS testing, hardness inspection & system recommendation',
-    icon: 'water-outline',
-    fee: 'FREE Consultation',
-  },
+];
+
+const VALID_SERVICE_TYPES: ServiceType[] = [
+  'leakage',
+  'low_flow',
+  'filter_change',
+  'general_service',
 ];
 
 const TIME_SLOTS = [
@@ -104,13 +111,14 @@ export default function BookServiceScreen() {
     pincode?: string;
   }>();
 
-  const [selectedType, setSelectedType] = useState<ServiceType>(
-    (params.selectedType as ServiceType) || 'installation'
-  );
+  const [selectedType, setSelectedType] = useState<ServiceType>(() => {
+    const paramType = params.selectedType as ServiceType;
+    return VALID_SERVICE_TYPES.includes(paramType) ? paramType : 'leakage';
+  });
   const [preferredDate, setPreferredDate] = useState(params.preferredDate || 'Tomorrow');
   const [preferredTime, setPreferredTime] = useState(params.preferredTime || TIME_SLOTS[0]);
   const [notes, setNotes] = useState(
-    params.notes || (params.productName ? `Installation for ${params.productName}` : '')
+    params.notes || (params.productName ? `Service request for ${params.productName}` : '')
   );
 
   // Address
@@ -122,6 +130,15 @@ export default function BookServiceScreen() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const { activeZones, activeZoneNames, validateAddress } = useDeliveryZones();
+
+  // Real-time delivery zone validation
+  const zoneValidation: DeliveryValidationResult = validateAddress({
+    city,
+    pincode,
+    addressLine1: addressLine,
+  });
 
   // Auto-sync profile info if authenticated
   useEffect(() => {
@@ -137,7 +154,9 @@ export default function BookServiceScreen() {
   useEffect(() => {
     if (pendingAction?.type === 'BOOK_SERVICE' && pendingAction.bookingData) {
       const b = pendingAction.bookingData;
-      if (b.selectedType) setSelectedType(b.selectedType);
+      if (b.selectedType && VALID_SERVICE_TYPES.includes(b.selectedType as ServiceType)) {
+        setSelectedType(b.selectedType as ServiceType);
+      }
       if (b.preferredDate) setPreferredDate(b.preferredDate);
       if (b.preferredTime) setPreferredTime(b.preferredTime);
       if (b.notes) setNotes(b.notes);
@@ -193,8 +212,22 @@ export default function BookServiceScreen() {
       return;
     }
 
+    if (!selectedType || !VALID_SERVICE_TYPES.includes(selectedType)) {
+      setError('Please select one of the available service types (Leakage, Low Flow, Filter Change, or General Service).');
+      return;
+    }
+
     if (!fullName.trim() || !phone.trim() || !addressLine.trim() || !city.trim() || !pincode.trim()) {
       setError('Please provide your complete service address and phone number.');
+      return;
+    }
+
+    // Delivery zone validation
+    if (!zoneValidation.isSupported) {
+      setError(
+        zoneValidation.message ||
+        `Doorstep technician service is currently limited to ${activeZoneNames || 'our authorized delivery zones'}. Please provide a service address within these supported zones.`
+      );
       return;
     }
 
@@ -206,7 +239,7 @@ export default function BookServiceScreen() {
       phone: phone.trim(),
       addressLine1: addressLine.trim(),
       city: city.trim(),
-      state: 'State',
+      state: 'Tamil Nadu',
       pincode: pincode.trim(),
     };
 
@@ -216,6 +249,8 @@ export default function BookServiceScreen() {
       address,
       preferredDate,
       preferredTime,
+      deliveryZone: `${zoneValidation.zoneName} Zone`,
+      baseOrigin: TAMBARAM_BASE_ORIGIN.name,
       ...(notes.trim() ? { notes: notes.trim() } : {}),
       status: 'requested',
       createdAt: new Date().toISOString(),
@@ -259,6 +294,7 @@ export default function BookServiceScreen() {
         serviceTitle: SERVICE_OPTIONS.find((s) => s.type === selectedType)?.title || 'Service',
         date: preferredDate,
         time: preferredTime,
+        deliveryZone: `${zoneValidation.zoneName} Zone`,
       },
     });
   };
@@ -462,10 +498,73 @@ export default function BookServiceScreen() {
             </View>
             <Input
               label="Notes / Purifier Model & Issue"
-              placeholder="e.g. Ro pump making noise, low water output"
+              placeholder="e.g. RO pump making noise, low water output"
               value={notes}
               onChangeText={setNotes}
             />
+          </View>
+
+          {/* Step 4: Delivery & Service Zone Routing Card */}
+          <View style={styles.card}>
+            <View style={styles.zoneHeader}>
+              <View style={styles.zoneHeaderTitleWrap}>
+                <Ionicons name="location-sharp" size={18} color={colors.primary} />
+                <Text style={styles.zoneHeaderTitle}>4. Technician Delivery Zones</Text>
+              </View>
+              <View style={styles.policyOriginBadge}>
+                <Ionicons name="business-outline" size={11} color={colors.primary} />
+                <Text style={styles.policyOriginText}>Base: {TAMBARAM_BASE_ORIGIN.name}</Text>
+              </View>
+            </View>
+
+            <Text style={styles.zoneSectionDesc}>
+              Doorstep technician service is dispatched directly from our Tambaram Main Branch across authorized delivery zones{activeZoneNames ? ` (${activeZoneNames})` : ''}:
+            </Text>
+
+            {/* Zones chips */}
+            <View style={styles.zonesRow}>
+              {activeZones.map((z) => (
+                <View key={z.id} style={styles.zoneChip}>
+                  <Ionicons name="location" size={11} color={colors.primary} />
+                  <Text style={styles.zoneChipText}>{z.name}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Real-Time Zone Validation Alert */}
+            {(city.trim() || pincode.trim()) && (
+              <View
+                style={[
+                  styles.zoneFeedbackBox,
+                  zoneValidation.isSupported
+                    ? styles.zoneFeedbackSuccess
+                    : styles.zoneFeedbackError,
+                ]}
+              >
+                <Ionicons
+                  name={zoneValidation.isSupported ? 'checkmark-circle' : 'alert-circle'}
+                  size={18}
+                  color={zoneValidation.isSupported ? colors.success : colors.error}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      styles.zoneFeedbackTitle,
+                      { color: zoneValidation.isSupported ? '#166534' : colors.error },
+                    ]}
+                  >
+                    {zoneValidation.isSupported
+                      ? `✓ Service Delivery Confirmed (${zoneValidation.zoneName} Zone)`
+                      : '⚠️ Outside Supported Delivery Zones'}
+                  </Text>
+                  <Text style={styles.zoneFeedbackDesc}>
+                    {zoneValidation.isSupported
+                      ? `Eligible for doorstep technician dispatch from ${TAMBARAM_BASE_ORIGIN.name} (${zoneValidation.transitTime}).`
+                      : 'Doorstep technician visits are currently available within Chennai, Chengalpattu, Kanchipuram, and Pondicherry.'}
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
 
           <Button
@@ -651,7 +750,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       color: colors.text,
     },
     pillTextActive: {
-      color: isDark ? '#210440' : colors.white,
+      color: isDark ? '#101321' : colors.white,
       fontWeight: '700',
     },
     slotsList: {
@@ -675,5 +774,103 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       ...typography.bodySmall,
       color: colors.text,
       fontWeight: '600',
+    },
+    zoneHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      gap: 8,
+      rowGap: 6,
+      marginBottom: spacing.xs,
+    },
+    zoneHeaderTitleWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      flexShrink: 1,
+    },
+    zoneHeaderTitle: {
+      ...typography.heading2,
+      color: colors.text,
+      fontSize: 16,
+    },
+    policyOriginBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: isDark ? 'rgba(167, 139, 250, 0.12)' : 'rgba(30, 77, 183, 0.08)',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: radius.full,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(167, 139, 250, 0.25)' : 'rgba(30, 77, 183, 0.2)',
+      alignSelf: 'flex-start',
+      flexShrink: 1,
+      maxWidth: '100%',
+    },
+    policyOriginText: {
+      ...typography.labelSmall,
+      color: colors.primary,
+      fontSize: 10,
+      fontWeight: '700',
+    },
+    zoneSectionDesc: {
+      ...typography.bodySmall,
+      color: colors.textSecondary,
+      fontSize: 12,
+      lineHeight: 18,
+      marginBottom: spacing.sm,
+    },
+    zonesRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+      marginBottom: spacing.md,
+    },
+    zoneChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: colors.surfaceMuted,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: radius.full,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    zoneChipText: {
+      ...typography.labelSmall,
+      color: colors.text,
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    zoneFeedbackBox: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.sm,
+      padding: spacing.md,
+      borderRadius: radius.md,
+      borderWidth: 1,
+    },
+    zoneFeedbackSuccess: {
+      backgroundColor: 'rgba(22, 163, 74, 0.08)',
+      borderColor: 'rgba(22, 163, 74, 0.3)',
+    },
+    zoneFeedbackError: {
+      backgroundColor: 'rgba(220, 38, 38, 0.08)',
+      borderColor: 'rgba(220, 38, 38, 0.3)',
+    },
+    zoneFeedbackTitle: {
+      ...typography.label,
+      fontSize: 12,
+      fontWeight: '700',
+      marginBottom: 2,
+    },
+    zoneFeedbackDesc: {
+      ...typography.bodySmall,
+      color: colors.textSecondary,
+      fontSize: 11,
+      lineHeight: 16,
     },
   });

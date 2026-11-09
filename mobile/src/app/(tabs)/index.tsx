@@ -38,6 +38,7 @@ import { AppRefreshControl, AquaPureLogo } from '@/components/ui';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useAuthStore } from '@/stores/authStore';
 import { useCartStore } from '@/stores/cartStore';
+import { PricingService } from '@/services/pricingService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IS_SMALL = SCREEN_WIDTH < 360;
@@ -65,8 +66,15 @@ const formatCategory = (id?: string) => {
   return text.charAt(0).toUpperCase() + text.slice(1);
 };
 
-const shortCategoryName = (name?: string) =>
-  (name || '').replace('Water ', '').replace(' & Valves', '');
+const shortCategoryName = (name?: string) => {
+  if (!name) return '';
+  if (name === 'RO Water Purifiers') return 'RO Purifiers';
+  if (name === 'Water Dispensers') return 'Dispensers';
+  if (name === 'Booster Pumps') return 'Booster Pumps';
+  if (name === 'SMPS Power Units') return 'Power Units';
+  if (name === 'Water Treatment Accessories & Filters') return 'Accessories & Filters';
+  return name;
+};
 
 const TRUST_ITEMS: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
   { icon: 'shield-checkmark-outline', label: 'Genuine\nproducts' },
@@ -108,13 +116,16 @@ const SectionHeader = memo(function SectionHeader({
 const ProductCard = memo(function ProductCard({
   product,
   onPress,
+  isDealerApproved = false,
 }: {
   product: Product;
   onPress: (p: Product) => void;
+  isDealerApproved?: boolean;
 }) {
   const { colors, isDark } = useTheme();
   const soldOut = product.stockStatus === 'out_of_stock';
   const limited = product.stockStatus === 'limited';
+  const pricing = PricingService.getProductPricing(product, isDealerApproved);
 
   return (
     <TouchableOpacity
@@ -122,7 +133,7 @@ const ProductCard = memo(function ProductCard({
       activeOpacity={0.85}
       onPress={() => onPress(product)}
       accessibilityRole="button"
-      accessibilityLabel={`${product.name}, price ${formatPrice(product.customerPrice)}${soldOut ? ', sold out' : ''}`}
+      accessibilityLabel={`${product.name}, price ${pricing.formattedPrice}${soldOut ? ', sold out' : ''}`}
     >
       <View style={[styles.carouselImageWrap, { backgroundColor: isDark ? '#160E21' : colors.surfaceMuted }]}>
         <Image
@@ -143,9 +154,16 @@ const ProductCard = memo(function ProductCard({
         <Text style={[styles.carouselProductName, { color: colors.text }]} numberOfLines={2}>
           {product.name}
         </Text>
-        <Text style={[styles.carouselPrice, { color: isDark ? colors.yellow : colors.primary }, soldOut && styles.priceMuted]}>
-          {formatPrice(product.customerPrice)}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <Text style={[styles.carouselPrice, { color: isDark ? colors.yellow : colors.primary }, soldOut && styles.priceMuted]}>
+            {pricing.formattedPrice}
+          </Text>
+          {pricing.isDealerActive && (
+            <View style={styles.dealerCarouselPill}>
+              <Text style={styles.dealerCarouselPillText}>Wholesale</Text>
+            </View>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -204,7 +222,7 @@ export default function HomeScreen() {
       // Purifiers and dispensers for popular
       setPopularProducts(
         all
-          .filter((p) => p.categoryId === 'water-purifiers' || p.categoryId === 'water-dispensers' || p.categoryId === 'purifiers' || p.categoryId === 'dispensers')
+          .filter((p) => p.categoryId === 'ro-water-purifiers' || p.categoryId === 'water-purifiers' || p.categoryId === 'water-dispensers' || p.categoryId === 'purifiers' || p.categoryId === 'dispensers')
           .slice(0, 6)
       );
       // Affordable items (spares, filters) for best deals
@@ -289,13 +307,18 @@ export default function HomeScreen() {
         snapToInterval={CAROUSEL_CARD_WIDTH + spacing.md}
       >
         {items.map((product) => (
-          <ProductCard key={product.id} product={product} onPress={handleProductPress} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            onPress={handleProductPress}
+            isDealerApproved={isDealerApproved}
+          />
         ))}
       </ScrollView>
     );
   };
 
-  const headerBg = isDark ? '#140A20' : colors.primary;
+  const headerBg = isDark ? '#101321' : colors.primary;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: headerBg }]} edges={['top']}>
@@ -340,12 +363,21 @@ export default function HomeScreen() {
                   </View>
                   {isDealerApproved ? (
                     <View style={styles.dealerPill}>
-                      <Ionicons name="shield-checkmark" size={10} color="#210440" />
+                      <Ionicons name="shield-checkmark" size={10} color="#1B1F5E" />
                       <Text style={styles.dealerPillText}>Dealer</Text>
                     </View>
                   ) : null}
                 </TouchableOpacity>
               ) : null}
+
+              <TouchableOpacity
+                style={styles.headerIcon}
+                onPress={() => router.push('/helpline')}
+                accessibilityRole="button"
+                accessibilityLabel="Contact Helpline"
+              >
+                <Ionicons name="headset-outline" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.headerIcon}
@@ -394,7 +426,7 @@ export default function HomeScreen() {
                 accessibilityLabel="Shop now"
               >
                 <Text style={styles.heroCtaText}>Shop now</Text>
-                <Ionicons name="arrow-forward" size={18} color="#210440" />
+                <Ionicons name="arrow-forward" size={18} color="#1B1F5E" />
               </TouchableOpacity>
             </View>
             <View style={styles.heroDecor1} />
@@ -460,9 +492,9 @@ export default function HomeScreen() {
         {/* ── Popular products ── */}
         <View style={styles.section}>
           <SectionHeader
-            title="Popular purifiers & systems"
-            onViewAll={() => handleNavigateCategories('water-purifiers')}
-            viewAllLabel="View all purifiers and systems"
+            title="Popular RO Purifiers"
+            onViewAll={() => handleNavigateCategories('ro-water-purifiers')}
+            viewAllLabel="View all RO water purifiers"
           />
           {renderCarousel(popularProducts, 'No purifiers available right now.')}
         </View>
@@ -494,9 +526,9 @@ export default function HomeScreen() {
         {/* ── Best deals ── */}
         <View style={styles.section}>
           <SectionHeader
-            title="Best deals & spare parts"
-            onViewAll={() => handleNavigateCategories('spare-parts')}
-            viewAllLabel="View all deals and spare parts"
+            title="Best Deals & Accessories"
+            onViewAll={() => handleNavigateCategories('water-treatment-accessories-filters')}
+            viewAllLabel="View all accessories and filters"
           />
           {renderCarousel(dealProducts, 'No deals available right now.')}
         </View>
@@ -504,7 +536,7 @@ export default function HomeScreen() {
         {/* ── Brand Footer ── */}
         <View style={styles.brandFooter}>
           <AquaPureLogo width={110} />
-          <Text style={styles.brandFooterText}>Pure water for every home • Official Store</Text>
+          <Text style={styles.brandFooterText}>Pure Water, Pure Life • Official Store</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -584,7 +616,7 @@ const styles = StyleSheet.create({
   },
   profileAvatarText: {
     ...typography.labelSmall,
-    color: '#210440',
+    color: '#1B1F5E',
     fontWeight: '800',
     fontSize: 12,
   },
@@ -615,7 +647,7 @@ const styles = StyleSheet.create({
   },
   dealerPillText: {
     ...typography.labelSmall,
-    color: '#210440',
+    color: '#1B1F5E',
     fontSize: 9,
     fontWeight: '800',
   },
@@ -642,7 +674,7 @@ const styles = StyleSheet.create({
   },
   cartBadgeText: {
     ...typography.labelSmall,
-    color: '#210440',
+    color: '#1B1F5E',
     fontSize: 9,
     fontWeight: '800',
   },
@@ -710,7 +742,7 @@ const styles = StyleSheet.create({
   },
   heroCtaText: {
     ...typography.label,
-    color: colors.primary,
+    color: '#1B1F5E',
     fontSize: 15,
     fontWeight: '700',
   },
@@ -911,6 +943,20 @@ const styles = StyleSheet.create({
   },
   priceMuted: {
     color: colors.textSecondary,
+  },
+  dealerCarouselPill: {
+    backgroundColor: 'rgba(234, 179, 8, 0.15)',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(234, 179, 8, 0.35)',
+  },
+  dealerCarouselPillText: {
+    ...typography.labelSmall,
+    color: '#B45309',
+    fontSize: 10,
+    fontWeight: '800',
   },
 
   // ── Skeleton / states ──
