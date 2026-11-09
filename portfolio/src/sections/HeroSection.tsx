@@ -281,24 +281,30 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <span className="text-xs font-bold text-emerald-400">In Stock • ₹15,999</span>
                   </div>
 
-                  {/* Product Image with Interactive Hover */}
+                  {/* Product Image with Interactive Hover: Clean White Studio Pedestal */}
                   <div
                     onClick={() => flagshipProduct && onSelectProduct(flagshipProduct)}
-                    className="relative h-44 w-full flex items-center justify-center p-2 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group"
+                    className="relative h-48 w-full flex items-center justify-center p-3 rounded-2xl bg-white shadow-md border border-white/30 cursor-pointer group overflow-hidden"
                     title="Click to view Aqua Touch specifications"
                   >
-                    <img
-                      src="/images/aqua-touch.jpg"
-                      alt="Aqua Touch Smart RO Purifier"
-                      className="max-h-full max-w-full object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)] group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        (e.target as HTMLElement).setAttribute(
-                          'src',
-                          'https://rukminim2.flixcart.com/image/1536/1536/xif0q/water-purifier/6/n/k/slim-glass-aquaguard-original-imah7sk3uzhx82tx.jpeg?q=90'
-                        );
-                      }}
-                    />
-                    <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-slate-900/80 border border-white/20 text-[9px] text-white flex items-center gap-1 group-hover:bg-brand-navy">
+                    {/* Soft stage light & floor shadow */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-slate-50/40 via-white to-white pointer-events-none" />
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-3/5 h-2.5 bg-slate-200/50 rounded-full blur-sm pointer-events-none" />
+
+                    <div className="relative z-10 w-full h-full flex items-center justify-center">
+                      <img
+                        src="/images/aqua-touch.jpg"
+                        alt="Aqua Touch Smart RO Purifier"
+                        className="max-h-full max-w-full w-auto h-auto object-contain drop-shadow-[0_8px_16px_rgba(27,31,94,0.1)] group-hover:scale-105 transition-transform duration-300 transform-gpu"
+                        onError={(e) => {
+                          (e.target as HTMLElement).setAttribute(
+                            'src',
+                            'https://rukminim2.flixcart.com/image/1536/1536/xif0q/water-purifier/6/n/k/slim-glass-aquaguard-original-imah7sk3uzhx82tx.jpeg?q=90'
+                          );
+                        }}
+                      />
+                    </div>
+                    <div className="absolute bottom-2 right-2 z-20 px-2 py-0.5 rounded-md bg-slate-900/80 border border-slate-700/60 text-[9px] text-white flex items-center gap-1 group-hover:bg-brand-navy shadow-xs transition-colors">
                       <Sparkles className="w-3 h-3 text-brand-orange" />
                       <span>Touch Controls</span>
                     </div>

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { X, CheckCircle2, Shield, Truck, MapPin, Smartphone, Phone, MessageCircle } from 'lucide-react';
 import { Product } from '../types';
 import { modalOverlayVariants, modalContentVariants, tapScale, hoverScale } from '../utils/animations';
+import { ProductImageStage } from './ProductImageStage';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -15,7 +16,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onClose,
   onOpenApp,
 }) => {
-  const [imageError, setImageError] = useState(false);
   const shouldReduceMotion = useReducedMotion();
 
   if (!product) return null;
@@ -29,12 +29,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     currency: 'INR',
     maximumFractionDigits: 0,
   }).format(product.price);
-
-  const imageSrc = imageError
-    ? '/images/aqua-touch.jpg'
-    : product.id === 'AP-WP-061'
-    ? '/images/aqua-touch.jpg'
-    : product.imageUrl;
 
   return (
     <motion.div
@@ -77,15 +71,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         {/* Modal Scrollable Body */}
         <div className="p-6 overflow-y-auto flex-1 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            {/* Product Image */}
-            <div className="relative aspect-square bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 flex items-center justify-center p-6">
-              <img
-                src={imageSrc}
-                alt={product.name}
-                className="max-h-full max-w-full w-auto h-auto object-contain drop-shadow-[0_4px_12px_rgba(27,31,94,0.08)]"
-                onError={() => setImageError(true)}
-              />
-            </div>
+            {/* Standardized Product Image Stage */}
+            <ProductImageStage
+              src={product.imageUrl}
+              alt={product.name}
+              categoryId={product.categoryId}
+              productId={product.id}
+              variant="modal"
+              className="rounded-2xl border border-slate-200/80 shadow-xs"
+            />
 
             {/* Title, Price, Description */}
             <div className="space-y-3">

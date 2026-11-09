@@ -142,9 +142,9 @@ export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = (
             <div className="absolute top-0 right-0 w-96 h-96 bg-brand-orange/15 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-10 left-1/3 w-80 h-80 bg-brand-green/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-              {/* Left Column: Flagship Highlights (8 cols) */}
-              <div className="lg:col-span-8 space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-10">
+              {/* Left Column: Flagship Highlights (7 cols) */}
+              <div className="lg:col-span-7 space-y-4">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-orange text-brand-navy-dark text-xs font-black uppercase tracking-wider shadow-sm">
                   <Sparkles className="w-3.5 h-3.5 fill-brand-navy-dark" />
                   Flagship Spotlight • Aqua Touch (AP-WP-061)
@@ -211,29 +211,55 @@ export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = (
                 </div>
               </div>
 
-              {/* Right Column: High-Res Flagship Image Display (4 cols) */}
-              <div className="lg:col-span-4 flex justify-center">
-                <motion.div
-                  onClick={() => onSelectProduct(aquaTouch)}
-                  whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
-                  className="relative w-52 h-52 sm:w-64 sm:h-64 bg-white/10 rounded-3xl p-5 backdrop-blur-sm border border-white/20 flex items-center justify-center group cursor-pointer hover:bg-white/15 transition-all"
-                  title="Click to zoom Aqua Touch"
-                >
-                  <img
-                    src="/images/aqua-touch.jpg"
-                    alt="Aqua Touch RO Purifier"
-                    className="max-h-full max-w-full object-contain drop-shadow-[0_16px_32px_rgba(0,0,0,0.5)] transition-transform duration-300"
-                    onError={(e) => {
-                      (e.target as HTMLElement).setAttribute(
-                        'src',
-                        'https://rukminim2.flixcart.com/image/1536/1536/xif0q/water-purifier/6/n/k/slim-glass-aquaguard-original-imah7sk3uzhx82tx.jpeg?q=90'
-                      );
-                    }}
-                  />
-                  <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-emerald-500/80 text-white text-[10px] font-bold">
-                    Doorstep Ready
-                  </div>
-                </motion.div>
+              {/* Right Column: Premium Illuminated Showcase Stage (5 cols) */}
+              <div className="lg:col-span-5 flex justify-center">
+                <div className="relative group">
+                  {/* Surrounding Ambient Light Halo */}
+                  <div className="absolute -inset-1.5 bg-gradient-to-r from-brand-orange/40 via-brand-green/30 to-brand-navy-light/40 rounded-[36px] blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+                  {/* Clean, Premium White Studio Stage */}
+                  <motion.div
+                    onClick={() => onSelectProduct(aquaTouch)}
+                    whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
+                    className="relative w-[280px] h-[340px] sm:w-[340px] sm:h-[400px] lg:w-[360px] lg:h-[420px] bg-white rounded-[32px] p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5),_0_0_35px_rgba(255,255,255,0.15)] border-2 border-white/90 flex flex-col items-center justify-center overflow-hidden cursor-pointer"
+                    title="Click to zoom Aqua Touch specifications"
+                  >
+                    {/* Soft stage light & floor shadow */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-slate-50/50 via-white to-white pointer-events-none" />
+                    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 w-3/4 h-4 bg-slate-300/50 rounded-full blur-md pointer-events-none group-hover:w-4/5 group-hover:bg-slate-400/50 transition-all duration-300" />
+
+                    {/* Centered High-Resolution Product Image */}
+                    <div className="relative z-10 w-full h-full flex items-center justify-center">
+                      <img
+                        src="/images/aqua-touch.jpg"
+                        alt="Aqua Touch RO Purifier"
+                        className="max-h-full max-w-full w-auto h-auto object-contain drop-shadow-[0_16px_28px_rgba(27,31,94,0.12)] group-hover:scale-105 transition-transform duration-500 ease-out transform-gpu"
+                        onError={(e) => {
+                          (e.target as HTMLElement).setAttribute(
+                            'src',
+                            'https://rukminim2.flixcart.com/image/1536/1536/xif0q/water-purifier/6/n/k/slim-glass-aquaguard-original-imah7sk3uzhx82tx.jpeg?q=90'
+                          );
+                        }}
+                      />
+                    </div>
+
+                    {/* Top Status Pill */}
+                    <div className="absolute top-4 right-4 z-20">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-brand-green border border-emerald-200 text-[10px] font-bold shadow-xs">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Doorstep Ready
+                      </span>
+                    </div>
+
+                    {/* Bottom Interactive Hint */}
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 opacity-90 group-hover:opacity-100 transition-opacity">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/80 text-white text-[10px] font-bold backdrop-blur-sm group-hover:bg-brand-navy shadow-xs transition-colors">
+                        <Sparkles className="w-3 h-3 text-brand-orange" />
+                        Capacitive Glass Touch
+                      </span>
+                    </div>
+                  </motion.div>
+                </div>
               </div>
             </div>
           </motion.div>

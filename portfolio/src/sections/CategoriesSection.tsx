@@ -4,6 +4,7 @@ import { ArrowRight, Droplets, GlassWater, Gauge, Zap, Layers, CheckCircle } fro
 import { OFFICIAL_CATEGORIES } from '../data/categories';
 import { ProductCategoryItem } from '../types';
 import { fadeInUp, staggerContainer, tapScale } from '../utils/animations';
+import { ProductImageStage } from '../components/ProductImageStage';
 
 interface CategoriesSectionProps {
   onSelectCategory: (categoryId: string) => void;
@@ -71,48 +72,43 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ onSelectCa
                     ? {}
                     : {
                         y: -6,
-                        boxShadow: '0 20px 35px -8px rgba(27, 31, 94, 0.14), 0 8px 16px -4px rgba(27, 31, 94, 0.06)',
+                        boxShadow:
+                          '0 20px 35px -8px rgba(27, 31, 94, 0.14), 0 8px 16px -4px rgba(27, 31, 94, 0.06)',
                       }
                 }
                 transition={{ duration: 0.25, ease: 'easeOut' }}
-                className={`group bg-white rounded-3xl border flex flex-col overflow-hidden transition-colors ${
+                className={`group bg-white rounded-3xl border flex flex-col h-full overflow-hidden transition-all duration-300 ${
                   isFeatured
                     ? 'border-brand-navy/30 shadow-card-hover md:col-span-2 lg:col-span-1 ring-1 ring-brand-navy/10'
                     : 'border-slate-200/80 shadow-card hover:border-slate-300'
                 }`}
               >
-                {/* Image & Header Banner */}
-                <div className="relative h-52 bg-gradient-to-b from-slate-100 to-slate-50 overflow-hidden flex items-center justify-center">
-                  {/* Subtle radial glow on card header */}
-                  <div className="absolute inset-0 bg-radial-glow opacity-50 pointer-events-none" />
-
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    className="w-full h-full object-contain p-6 group-hover:scale-105 transition-transform duration-500 relative z-10"
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.target as HTMLElement).setAttribute('src', fallbackImage);
-                    }}
-                  />
-
+                {/* Standardized Category Image Stage: pure light background with subtle shadows & smooth hover zoom */}
+                <ProductImageStage
+                  src={cat.image}
+                  alt={cat.name}
+                  categoryId={cat.id}
+                  variant="category"
+                  fallbackSrc={fallbackImage}
+                  className="border-b border-slate-100"
+                >
                   {/* Category Model Badge */}
                   <div className="absolute top-4 left-4 z-20">
-                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/95 text-brand-navy shadow-sm backdrop-blur-sm border border-slate-200">
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/95 text-brand-navy shadow-xs backdrop-blur-sm border border-slate-200/80">
                       {cat.badge}
                     </span>
                   </div>
 
                   {/* Icon Circle */}
-                  <div className="absolute top-4 right-4 w-10 h-10 rounded-2xl bg-white/95 flex items-center justify-center shadow-sm backdrop-blur-sm z-20 group-hover:scale-110 transition-transform duration-200">
+                  <div className="absolute top-4 right-4 w-10 h-10 rounded-2xl bg-white/95 flex items-center justify-center shadow-xs backdrop-blur-sm border border-slate-200/80 z-20 group-hover:scale-110 transition-transform duration-200">
                     {getIcon(cat.iconName)}
                   </div>
-                </div>
+                </ProductImageStage>
 
                 {/* Card Content */}
                 <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center justify-between mb-1.5">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                         Category 0{index + 1}
                       </span>
@@ -125,7 +121,7 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ onSelectCa
                       {cat.name}
                     </h3>
 
-                    <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                    <p className="mt-2 text-xs text-slate-600 leading-relaxed min-h-[2.5rem]">
                       {cat.description}
                     </p>
 

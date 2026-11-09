@@ -322,14 +322,16 @@ export const AppShowcaseSection: React.FC<AppShowcaseSectionProps> = ({ onOpenAp
                         </div>
 
                         {/* Featured Model */}
-                        <div className="bg-white p-2.5 rounded-2xl border border-slate-200 flex items-center gap-2">
-                          <img src="/images/aqua-touch.jpg" alt="" className="w-12 h-12 object-contain" />
+                        <div className="bg-white p-2.5 rounded-2xl border border-slate-200 flex items-center gap-2.5">
+                          <div className="w-12 h-12 bg-white rounded-xl p-1 border border-slate-100 flex items-center justify-center shrink-0 shadow-2xs">
+                            <img src="/images/aqua-touch.jpg" alt="Aqua Touch" className="max-h-full max-w-full object-contain" />
+                          </div>
                           <div className="flex-1 min-w-0">
                             <span className="text-[9px] font-bold text-brand-orange block">FLAGSHIP</span>
                             <span className="text-[11px] font-extrabold text-brand-navy truncate block">Aqua Touch</span>
                             <span className="text-[10px] font-black text-brand-navy">₹15,999</span>
                           </div>
-                          <span className="text-[9px] bg-brand-navy text-white px-2 py-1 rounded-lg font-bold">
+                          <span className="text-[9px] bg-brand-navy text-white px-2.5 py-1 rounded-lg font-bold">
                             View
                           </span>
                         </div>
@@ -407,9 +409,11 @@ export const AppShowcaseSection: React.FC<AppShowcaseSectionProps> = ({ onOpenAp
                           Your Order (1 Item)
                         </span>
 
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-200 flex items-center gap-2">
-                          <img src="/images/aqua-touch.jpg" alt="" className="w-10 h-10 object-contain" />
-                          <div className="flex-1">
+                        <div className="bg-white p-2.5 rounded-xl border border-slate-200 flex items-center gap-2.5">
+                          <div className="w-10 h-10 bg-white rounded-lg p-0.5 border border-slate-100 flex items-center justify-center shrink-0">
+                            <img src="/images/aqua-touch.jpg" alt="Aqua Touch" className="max-h-full max-w-full object-contain" />
+                          </div>
+                          <div className="flex-1 min-w-0">
                             <span className="text-[10px] font-bold text-brand-navy block truncate">Aqua Touch RO</span>
                             <span className="text-[9px] text-slate-500">Qty: 1 • Direct Delivery</span>
                           </div>
