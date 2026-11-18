@@ -44,7 +44,7 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({
         exit="exit"
         onClick={(e) => e.stopPropagation()}
         data-lenis-prevent
-        className="relative bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-brand-border overflow-hidden"
+        className="relative bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-brand-border overflow-hidden my-4 max-h-[90vh] flex flex-col"
       >
         {/* Header */}
         <div className="p-6 bg-brand-navy text-white relative">
@@ -125,7 +125,7 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({
         </div>
 
         {/* Content Area */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           {tab === 'apk' && (
             <div className="space-y-4 text-center">
               <div className="inline-flex p-3 rounded-2xl bg-emerald-50 text-brand-green">

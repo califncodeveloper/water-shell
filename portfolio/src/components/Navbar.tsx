@@ -25,6 +25,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAppModal }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Automatically close mobile menu when route changes or user presses Escape
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const navLinks = [
     { name: 'Products', href: '#products', path: '/products' },
     { name: 'Categories', href: '#categories', path: '/categories' },
@@ -125,8 +140,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAppModal }) => {
             })}
           </nav>
 
-          {/* Right Actions: Helpline Pill + CTA Button */}
-          <div className="hidden md:flex items-center gap-2.5 shrink-0">
+          {/* Right Actions for Desktop (lg+) */}
+          <div className="hidden lg:flex items-center gap-2.5 shrink-0">
             <motion.a
               href="tel:+918825541297"
               whileHover={{ scale: 1.03 }}
@@ -149,21 +164,33 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAppModal }) => {
             </motion.button>
           </div>
 
-          {/* Mobile Actions & Menu Toggle */}
-          <div className="flex lg:hidden items-center gap-2">
+          {/* Mobile & Tablet Actions & Menu Toggle (lg:hidden) */}
+          <div className="flex lg:hidden items-center gap-1.5 sm:gap-2">
+            {/* Quick Call Button on Mobile/Tablet */}
+            <motion.a
+              href="tel:+918825541297"
+              whileTap={{ scale: 0.95 }}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-navy bg-slate-100 hover:bg-slate-200 rounded-full border border-slate-200/80 transition-colors cursor-pointer"
+              title="Call Support Desk"
+            >
+              <Phone className="w-3.5 h-3.5 text-brand-navy" />
+              <span className="text-[11px] font-bold">+91 88255 41297</span>
+            </motion.a>
+
             <motion.button
               onClick={onOpenAppModal}
               whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-brand-navy-dark bg-brand-orange rounded-full shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-brand-navy-dark bg-brand-orange hover:bg-brand-orange-light rounded-full shadow-xs cursor-pointer"
             >
               <Smartphone className="w-3.5 h-3.5" />
-              <span>App</span>
+              <span className="hidden sm:inline">Get App</span>
+              <span className="sm:hidden">App</span>
             </motion.button>
 
             <motion.button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               whileTap={{ scale: 0.9 }}
-              className="p-2 rounded-xl text-slate-700 hover:text-brand-navy hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
+              className="p-2 rounded-xl text-slate-700 hover:text-brand-navy hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center"
               aria-label="Toggle Navigation Menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -180,7 +207,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAppModal }) => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:hidden overflow-hidden bg-white/98 backdrop-blur-xl border-b border-slate-200/90 shadow-xl"
+            className="lg:hidden overflow-hidden bg-white/98 backdrop-blur-xl border-b border-slate-200/90 shadow-xl max-h-[calc(100vh-70px)] overflow-y-auto"
           >
             <motion.div
               initial="hidden"

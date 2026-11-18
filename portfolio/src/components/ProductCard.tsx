@@ -82,7 +82,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       </ProductImageStage>
 
       {/* Product Information Body */}
-      <div className="p-5 flex-1 flex flex-col justify-between">
+      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
         <div className="flex-1 flex flex-col">
           {/* Model ID tag */}
           <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 mb-1.5">

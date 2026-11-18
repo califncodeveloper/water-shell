@@ -55,7 +55,7 @@ export const LegalModals: React.FC<LegalModalProps> = ({ type, onClose }) => {
         </div>
 
         {/* Scrollable Content */}
-        <div className="p-6 overflow-y-auto space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
           {type === 'privacy' && (
             <>
               <p className="font-semibold text-slate-800">Effective Date: January 2026</p>

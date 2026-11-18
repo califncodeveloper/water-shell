@@ -139,7 +139,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             {/* Main Headline with word-by-word reveal */}
             <motion.h1
               variants={fadeInUp}
-              className="text-4xl sm:text-5xl lg:text-6xl font-black text-brand-navy tracking-tight leading-[1.12]"
+              className="text-3xl sm:text-5xl lg:text-6xl font-black text-brand-navy tracking-tight leading-[1.15]"
             >
               <span>Pure Water.{' '}</span>
               <span className="text-gradient-orange inline-block">
@@ -150,7 +150,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             {/* Brand Description */}
             <motion.p
               variants={fadeInUp}
-              className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal"
+              className="text-sm sm:text-base lg:text-lg text-slate-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal"
             >
               Engineered for absolute purity, electrolyte balance, and modern kitchen elegance. Discover certified multi-stage RO+UV+UF filtration systems with intelligent capacitive touch controls, real-time cartridge telemetry, and trusted local dealer fulfillment.
             </motion.p>
@@ -158,20 +158,20 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             {/* Key Purity Highlights Bar */}
             <motion.div
               variants={fadeInUp}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 max-w-2xl mx-auto lg:mx-0"
+              className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-2 max-w-2xl mx-auto lg:mx-0"
             >
               {highlights.map((h, i) => (
                 <motion.div
                   key={i}
                   whileHover={shouldReduceMotion ? undefined : { y: -3, scale: 1.02 }}
-                  className={`flex items-center gap-2.5 p-3 rounded-2xl bg-white border border-slate-200/80 shadow-xs ${h.border} transition-colors cursor-default`}
+                  className={`flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-2xl bg-white border border-slate-200/80 shadow-xs ${h.border} transition-colors cursor-default`}
                 >
-                  <div className={`w-8 h-8 rounded-xl ${h.bg} flex items-center justify-center shrink-0`}>
+                  <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl ${h.bg} flex items-center justify-center shrink-0`}>
                     {h.icon}
                   </div>
-                  <div className="text-left">
-                    <span className="text-xs font-bold text-brand-navy block leading-tight">{h.title}</span>
-                    <span className="text-[10px] text-slate-500">{h.sub}</span>
+                  <div className="text-left min-w-0">
+                    <span className="text-xs font-bold text-brand-navy block leading-tight truncate">{h.title}</span>
+                    <span className="text-[10px] text-slate-500 truncate block">{h.sub}</span>
                   </div>
                 </motion.div>
               ))}
@@ -180,13 +180,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             {/* 3 Prominent CTAs: Explore Products, Discover Water Shell, Download App */}
             <motion.div
               variants={fadeInUp}
-              className="pt-3 flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4"
+              className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-2.5 sm:gap-4"
             >
               <motion.button
                 onClick={onExploreProducts}
                 whileHover={shouldReduceMotion ? undefined : hoverScale}
                 whileTap={shouldReduceMotion ? undefined : tapScale}
-                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full text-xs sm:text-sm font-bold text-white bg-brand-navy hover:bg-brand-navy-light shadow-md hover:shadow-lg transition-colors duration-200"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 rounded-full text-xs sm:text-sm font-bold text-white bg-brand-navy hover:bg-brand-navy-light shadow-md hover:shadow-lg transition-colors duration-200 cursor-pointer"
               >
                 <span>Explore Products</span>
                 <ArrowRight className="w-4 h-4" />
@@ -196,7 +196,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 onClick={handleDiscover}
                 whileHover={shouldReduceMotion ? undefined : hoverScale}
                 whileTap={shouldReduceMotion ? undefined : tapScale}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold text-brand-navy bg-white hover:bg-slate-100 border border-slate-200/90 shadow-xs hover:shadow transition-colors duration-200"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3 sm:py-3.5 rounded-full text-xs sm:text-sm font-bold text-brand-navy bg-white hover:bg-slate-100 border border-slate-200/90 shadow-xs hover:shadow transition-colors duration-200 cursor-pointer"
               >
                 <Compass className="w-4 h-4 text-brand-navy" />
                 <span>Discover Water Shell</span>
@@ -206,7 +206,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 onClick={onOpenAppModal}
                 whileHover={shouldReduceMotion ? undefined : { scale: 1.04, boxShadow: '0 6px 20px rgba(245, 166, 35, 0.4)' }}
                 whileTap={shouldReduceMotion ? undefined : tapScale}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold text-brand-navy-dark bg-brand-orange hover:bg-brand-orange-light shadow-sm transition-colors duration-200"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3 sm:py-3.5 rounded-full text-xs sm:text-sm font-bold text-brand-navy-dark bg-brand-orange hover:bg-brand-orange-light shadow-sm transition-colors duration-200 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 <span>Download App</span>
@@ -229,7 +229,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               initial={{ opacity: 0, scale: 0.9, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="relative w-full max-w-[360px] sm:max-w-[400px]"
+              className="relative w-full max-w-[300px] sm:max-w-[360px] lg:max-w-[400px]"
             >
               {/* Radial Ambient Backlight */}
               <div className="absolute inset-0 bg-radial-glow rounded-full scale-125 opacity-90 pointer-events-none" />
@@ -448,12 +448,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="mt-16 pt-8 border-t border-slate-200/80"
         >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 text-center">
             <motion.div
               whileHover={shouldReduceMotion ? undefined : { y: -3 }}
-              className="p-5 rounded-3xl bg-white/80 border border-slate-200/80 shadow-xs hover:shadow-card transition-all"
+              className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white/80 border border-slate-200/80 shadow-xs hover:shadow-card transition-all"
             >
-              <span className="text-2xl sm:text-3xl font-black text-brand-navy block font-sans">
+              <span className="text-xl sm:text-2xl lg:text-3xl font-black text-brand-navy block font-sans">
                 50+
               </span>
               <span className="text-xs font-bold text-slate-700 mt-1 block">
@@ -466,9 +466,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
             <motion.div
               whileHover={shouldReduceMotion ? undefined : { y: -3 }}
-              className="p-5 rounded-3xl bg-white/80 border border-slate-200/80 shadow-xs hover:shadow-card transition-all"
+              className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white/80 border border-slate-200/80 shadow-xs hover:shadow-card transition-all"
             >
-              <span className="text-2xl sm:text-3xl font-black text-brand-navy block font-sans">
+              <span className="text-xl sm:text-2xl lg:text-3xl font-black text-brand-navy block font-sans">
                 4 Hubs
               </span>
               <span className="text-xs font-bold text-slate-700 mt-1 block">
@@ -481,9 +481,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
             <motion.div
               whileHover={shouldReduceMotion ? undefined : { y: -3 }}
-              className="p-5 rounded-3xl bg-white/80 border border-slate-200/80 shadow-xs hover:shadow-card transition-all"
+              className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white/80 border border-slate-200/80 shadow-xs hover:shadow-card transition-all"
             >
-              <span className="text-2xl sm:text-3xl font-black text-brand-green block font-sans">
+              <span className="text-xl sm:text-2xl lg:text-3xl font-black text-brand-green block font-sans">
                 100%
               </span>
               <span className="text-xs font-bold text-slate-700 mt-1 block">
@@ -496,9 +496,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
             <motion.div
               whileHover={shouldReduceMotion ? undefined : { y: -3 }}
-              className="p-5 rounded-3xl bg-white/80 border border-slate-200/80 shadow-xs hover:shadow-card transition-all"
+              className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white/80 border border-slate-200/80 shadow-xs hover:shadow-card transition-all"
             >
-              <span className="text-2xl sm:text-3xl font-black text-brand-orange block font-sans">
+              <span className="text-xl sm:text-2xl lg:text-3xl font-black text-brand-orange block font-sans">
                 2500 ppm
               </span>
               <span className="text-xs font-bold text-slate-700 mt-1 block">

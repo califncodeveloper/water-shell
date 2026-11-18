@@ -30,7 +30,7 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ onSelectCa
   };
 
   return (
-    <section id="categories" className="py-20 lg:py-28 bg-brand-gray relative overflow-hidden">
+    <section id="categories" className="py-16 sm:py-20 lg:py-28 bg-brand-gray relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
@@ -38,12 +38,12 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ onSelectCa
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
-          className="text-center max-w-3xl mx-auto space-y-3 mb-16"
+          className="text-center max-w-3xl mx-auto space-y-3 mb-12 sm:mb-16"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-orange-muted text-brand-orange text-xs font-bold uppercase tracking-wider">
             Official Catalog Range
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-brand-navy tracking-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-brand-navy tracking-tight">
             Explore 5 Certified Product Categories
           </h2>
           <p className="text-sm sm:text-base text-slate-600">
@@ -57,7 +57,7 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ onSelectCa
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
         >
           {OFFICIAL_CATEGORIES.map((cat: ProductCategoryItem, index: number) => {
             const isFeatured = index === 0; // Highlight RO Water Purifiers
@@ -106,7 +106,7 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ onSelectCa
                 </ProductImageStage>
 
                 {/* Card Content */}
-                <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between">
+                <div className="p-5 sm:p-7 flex-1 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">

@@ -9,6 +9,37 @@
   color-scheme: light;
 }
 
+/* Global viewport & overflow protection */
+html {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Touch-friendly optimizations */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Lenis smooth scrolling rules */
 html.lenis,
 html.lenis body {

@@ -69,8 +69,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         </div>
 
         {/* Modal Scrollable Body */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-5 sm:space-y-6">
+          {/* Mobile Product Header (Positioned above image on < md so image appears between title and description) */}
+          <div className="block md:hidden space-y-1">
+            <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+              Product Code: {product.id}
+            </span>
+            <h2 className="text-lg sm:text-xl font-extrabold text-brand-navy leading-snug">
+              {product.name}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-center">
             {/* Standardized Product Image Stage */}
             <ProductImageStage
               src={product.imageUrl}
@@ -81,14 +91,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               className="rounded-2xl border border-slate-200/80 shadow-xs"
             />
 
-            {/* Title, Price, Description */}
+            {/* Desktop Title & Details (Title hidden on mobile since rendered above image) */}
             <div className="space-y-3">
-              <span className="text-xs font-bold text-slate-400 tracking-wider uppercase">
-                Product Code: {product.id}
-              </span>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-brand-navy leading-snug">
-                {product.name}
-              </h2>
+              <div className="hidden md:block space-y-1">
+                <span className="text-xs font-bold text-slate-400 tracking-wider uppercase">
+                  Product Code: {product.id}
+                </span>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-brand-navy leading-snug">
+                  {product.name}
+                </h2>
+              </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl sm:text-3xl font-black text-brand-navy">
                   {formattedPrice}

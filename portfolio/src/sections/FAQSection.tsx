@@ -23,7 +23,7 @@ export const FAQSection: React.FC<FAQSectionProps> = ({ onOpenAppModal }) => {
   };
 
   return (
-    <section id="faqs" className="py-20 lg:py-28 bg-white relative overflow-hidden">
+    <section id="faqs" className="py-16 sm:py-20 lg:py-28 bg-white relative overflow-hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -31,12 +31,12 @@ export const FAQSection: React.FC<FAQSectionProps> = ({ onOpenAppModal }) => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
-          className="text-center max-w-3xl mx-auto space-y-3 mb-12"
+          className="text-center max-w-3xl mx-auto space-y-3 mb-10 sm:mb-12"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-navy-muted text-brand-navy text-xs font-bold uppercase tracking-wider">
             Help Center & Clarity
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-brand-navy tracking-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-brand-navy tracking-tight">
             Frequently Asked Questions
           </h2>
           <p className="text-sm sm:text-base text-slate-600">

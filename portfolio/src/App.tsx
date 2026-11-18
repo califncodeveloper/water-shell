@@ -45,7 +45,7 @@ export function AppContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-brand-gray text-brand-navy antialiased">
+    <div className="min-h-screen flex flex-col bg-brand-gray text-brand-navy antialiased w-full max-w-full overflow-x-hidden">
       {/* Fixed Sticky Header Navigation */}
       <Navbar onOpenAppModal={() => handleOpenAppModal()} />
 

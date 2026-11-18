@@ -57,131 +57,11 @@ export const AppShowcaseSection: React.FC<AppShowcaseSectionProps> = ({ onOpenAp
     },
   ];
 
-  return (
-    <section id="app" className="py-20 lg:py-28 bg-gradient-to-b from-white via-slate-50 to-brand-gray relative overflow-hidden">
-      {/* Background ambient orbs */}
-      <div className="absolute top-1/3 left-10 w-[500px] h-[500px] bg-brand-orange-muted/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-[450px] h-[450px] bg-brand-navy-muted/30 rounded-full blur-3xl pointer-events-none" />
+  // Phone Device Mockup Showcase: rendered in right column on desktop (lg+),
+  // and positioned specifically between section title and description on mobile (< lg).
+  const renderPhoneMockup = () => (
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Header */}
-        <motion.div
-          variants={fadeInUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          className="text-center max-w-3xl mx-auto space-y-3 mb-16"
-        >
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-orange text-brand-navy-dark text-xs font-black uppercase tracking-wider shadow-sm">
-            <Smartphone className="w-4 h-4" />
-            Official Mobile Experience
-          </div>
-          <h2 className="text-3xl sm:text-5xl font-black text-brand-navy tracking-tight">
-            The Water Shell Mobile App
-          </h2>
-          <p className="text-sm sm:text-base text-slate-600">
-            Water purification at your fingertips. Discover products, check delivery eligibility, order doorstep installations, book certified service technicians, and manage your dealer wholesale account.
-          </p>
-        </motion.div>
-
-        {/* Showcase Grid: Features on Left, Interactive Phone Mockup on Right */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-          {/* Features Column (7 cols) */}
-          <motion.div
-            variants={staggerContainer(0.08, 0.1)}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.15 }}
-            className="lg:col-span-7 space-y-6"
-          >
-            <div className="space-y-3">
-              <span className="text-xs uppercase font-extrabold tracking-wider text-brand-green">
-                Zero Friction Mobile Solution
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-black text-brand-navy leading-tight">
-                Engineered for Customers & Authorized Dealers Alike
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Whether you need a new multi-stage RO purifier for your home, emergency maintenance on an existing unit, or bulk commercial spares for your retail shop, the Water Shell app handles it effortlessly.
-              </p>
-            </div>
-
-            {/* Feature Cards List with Interactive Preview triggers */}
-            <div className="space-y-3 pt-2">
-              {appFeatures.map((feat) => {
-                const isCurrentScreen = activeScreen === feat.id;
-                return (
-                  <motion.div
-                    key={feat.title}
-                    variants={fadeInUp}
-                    onClick={() => setActiveScreen(feat.id)}
-                    whileHover={shouldReduceMotion ? undefined : { x: 3 }}
-                    whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }}
-                    className={`p-4 rounded-3xl border transition-all cursor-pointer flex items-start gap-4 ${
-                      isCurrentScreen
-                        ? 'bg-white border-brand-navy shadow-md ring-2 ring-brand-navy/10'
-                        : 'bg-white/80 border-slate-200/90 shadow-xs hover:bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-100 shrink-0">
-                      {feat.icon}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs sm:text-sm font-bold text-brand-navy">{feat.title}</h4>
-                        {isCurrentScreen && (
-                          <span className="text-[10px] font-bold text-brand-orange bg-brand-orange-muted px-2 py-0.5 rounded-md">
-                            Active Preview
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{feat.description}</p>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            {/* Main Action CTAs */}
-            <div className="pt-4 space-y-4">
-              <div className="flex flex-col sm:flex-row items-center gap-3">
-                <motion.a
-                  href="/AquaPure.apk"
-                  download="AquaPure.apk"
-                  whileHover={shouldReduceMotion ? undefined : { scale: 1.04, boxShadow: '0 6px 20px rgba(245, 166, 35, 0.4)' }}
-                  whileTap={shouldReduceMotion ? undefined : tapScale}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full text-xs sm:text-sm font-bold text-brand-navy-dark bg-brand-orange hover:bg-brand-orange-light shadow-md transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download APK (39 MB)</span>
-                </motion.a>
-
-                <motion.button
-                  onClick={onOpenAppModal}
-                  whileHover={shouldReduceMotion ? undefined : { scale: 1.04 }}
-                  whileTap={shouldReduceMotion ? undefined : tapScale}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold text-brand-navy bg-white hover:bg-slate-50 border border-slate-300 shadow-xs transition-colors"
-                >
-                  <QrCode className="w-4 h-4 text-brand-navy" />
-                  <span>Scan QR Code or Store Links</span>
-                </motion.button>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-brand-green" />
-                  <span>Package: com.watershell.app</span>
-                </div>
-                <span>•</span>
-                <span>Requires Android 8.0+</span>
-                <span>•</span>
-                <span className="text-brand-green font-semibold">100% Virus & Malware Free</span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Phone Device Mockup Column (5 cols) */}
-          <div className="lg:col-span-5 flex flex-col items-center">
+          <div className="flex flex-col items-center max-w-full">
             {/* Screen Selector Tabs */}
             <div className="flex items-center gap-1 p-1 bg-white border border-slate-200 rounded-full shadow-xs mb-4 overflow-x-auto max-w-full">
               {(
@@ -222,7 +102,7 @@ export const AppShowcaseSection: React.FC<AppShowcaseSectionProps> = ({ onOpenAp
                 repeatType: 'reverse',
                 ease: 'easeInOut',
               }}
-              className="relative w-[290px] sm:w-[320px] h-[590px] sm:h-[630px] bg-slate-950 rounded-[48px] p-3.5 shadow-2xl border-4 border-slate-800 ring-1 ring-slate-950/20"
+              className="relative w-[280px] sm:w-[320px] h-[560px] sm:h-[630px] max-w-[calc(100vw-2.5rem)] bg-slate-950 rounded-[44px] sm:rounded-[48px] p-3 sm:p-3.5 shadow-2xl border-4 border-slate-800 ring-1 ring-slate-950/20"
             >
               {/* Speaker & Dynamic Island Camera Notch */}
               <div className="absolute top-5 left-1/2 -translate-x-1/2 w-28 h-4 bg-slate-900 rounded-full z-30 flex items-center justify-center gap-2">
@@ -526,6 +406,141 @@ export const AppShowcaseSection: React.FC<AppShowcaseSectionProps> = ({ onOpenAp
                 </div>
               </div>
             </motion.div>
+          </div>
+  );
+
+  return (
+    <section id="app" className="py-16 sm:py-20 lg:py-28 bg-gradient-to-b from-white via-slate-50 to-brand-gray relative overflow-hidden">
+      {/* Background ambient orbs */}
+      <div className="absolute top-1/3 left-10 w-[500px] h-[500px] bg-brand-orange-muted/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-[450px] h-[450px] bg-brand-navy-muted/30 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Header */}
+        <motion.div
+          variants={fadeInUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          className="text-center max-w-3xl mx-auto space-y-3 mb-16"
+        >
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-orange text-brand-navy-dark text-xs font-black uppercase tracking-wider shadow-sm">
+            <Smartphone className="w-4 h-4" />
+            Official Mobile Experience
+          </div>
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-brand-navy tracking-tight">
+            The Water Shell Mobile App
+          </h2>
+
+          {/* Mobile & Smaller Screens: Phone Mockup Positioned Specifically Between Section Title and Description */}
+          <div className="block lg:hidden my-8">
+            {renderPhoneMockup()}
+          </div>
+
+          <p className="text-sm sm:text-base text-slate-600">
+            Water purification at your fingertips. Discover products, check delivery eligibility, order doorstep installations, book certified service technicians, and manage your dealer wholesale account.
+          </p>
+        </motion.div>
+
+        {/* Showcase Grid: Features on Left, Interactive Phone Mockup on Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          {/* Features Column (7 cols) */}
+          <motion.div
+            variants={staggerContainer(0.08, 0.1)}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.15 }}
+            className="lg:col-span-7 space-y-6"
+          >
+            <div className="space-y-3">
+              <span className="text-xs uppercase font-extrabold tracking-wider text-brand-green">
+                Zero Friction Mobile Solution
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-black text-brand-navy leading-tight">
+                Engineered for Customers & Authorized Dealers Alike
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Whether you need a new multi-stage RO purifier for your home, emergency maintenance on an existing unit, or bulk commercial spares for your retail shop, the Water Shell app handles it effortlessly.
+              </p>
+            </div>
+
+            {/* Feature Cards List with Interactive Preview triggers */}
+            <div className="space-y-3 pt-2">
+              {appFeatures.map((feat) => {
+                const isCurrentScreen = activeScreen === feat.id;
+                return (
+                  <motion.div
+                    key={feat.title}
+                    variants={fadeInUp}
+                    onClick={() => setActiveScreen(feat.id)}
+                    whileHover={shouldReduceMotion ? undefined : { x: 3 }}
+                    whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }}
+                    className={`p-4 rounded-3xl border transition-all cursor-pointer flex items-start gap-4 ${
+                      isCurrentScreen
+                        ? 'bg-white border-brand-navy shadow-md ring-2 ring-brand-navy/10'
+                        : 'bg-white/80 border-slate-200/90 shadow-xs hover:bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-100 shrink-0">
+                      {feat.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs sm:text-sm font-bold text-brand-navy">{feat.title}</h4>
+                        {isCurrentScreen && (
+                          <span className="text-[10px] font-bold text-brand-orange bg-brand-orange-muted px-2 py-0.5 rounded-md">
+                            Active Preview
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{feat.description}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Main Action CTAs */}
+            <div className="pt-4 space-y-4">
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <motion.a
+                  href="/AquaPure.apk"
+                  download="AquaPure.apk"
+                  whileHover={shouldReduceMotion ? undefined : { scale: 1.04, boxShadow: '0 6px 20px rgba(245, 166, 35, 0.4)' }}
+                  whileTap={shouldReduceMotion ? undefined : tapScale}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full text-xs sm:text-sm font-bold text-brand-navy-dark bg-brand-orange hover:bg-brand-orange-light shadow-md transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download APK (39 MB)</span>
+                </motion.a>
+
+                <motion.button
+                  onClick={onOpenAppModal}
+                  whileHover={shouldReduceMotion ? undefined : { scale: 1.04 }}
+                  whileTap={shouldReduceMotion ? undefined : tapScale}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold text-brand-navy bg-white hover:bg-slate-50 border border-slate-300 shadow-xs transition-colors"
+                >
+                  <QrCode className="w-4 h-4 text-brand-navy" />
+                  <span>Scan QR Code or Store Links</span>
+                </motion.button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-brand-green" />
+                  <span>Package: com.watershell.app</span>
+                </div>
+                <span>•</span>
+                <span>Requires Android 8.0+</span>
+                <span>•</span>
+                <span className="text-brand-green font-semibold">100% Virus & Malware Free</span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Phone Device Mockup Column for Desktop (5 cols, hidden on mobile/tablet) */}
+          <div className="hidden lg:flex lg:col-span-5 flex-col items-center">
+            {renderPhoneMockup()}
           </div>
         </div>
       </div>

@@ -235,14 +235,14 @@ export const Footer: React.FC<FooterProps> = ({
 
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
             <span>© 2026 Water Shell. All rights reserved.</span>
-            <span>•</span>
+            <span className="hidden xs:inline">•</span>
             <span className="text-brand-green font-medium">Certified Purity Guarantee</span>
           </div>
 
           {/* Legal Document Links */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 text-center sm:text-right">
             <Link
               to="/privacy-policy"
               className="hover:text-white transition-colors underline-offset-4 hover:underline"

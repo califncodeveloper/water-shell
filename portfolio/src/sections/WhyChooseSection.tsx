@@ -72,7 +72,7 @@ export const WhyChooseSection: React.FC = () => {
   ];
 
   return (
-    <section id="why-us" className="py-20 lg:py-28 bg-brand-gray relative overflow-hidden">
+    <section id="why-us" className="py-16 sm:py-20 lg:py-28 bg-brand-gray relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -80,12 +80,12 @@ export const WhyChooseSection: React.FC = () => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
-          className="text-center max-w-3xl mx-auto space-y-3 mb-16"
+          className="text-center max-w-3xl mx-auto space-y-3 mb-12 sm:mb-16"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-green-muted text-brand-green text-xs font-bold uppercase tracking-wider">
             Brand Strengths
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-brand-navy tracking-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-brand-navy tracking-tight">
             Why Choose Water Shell?
           </h2>
           <p className="text-sm sm:text-base text-slate-600">
@@ -99,7 +99,7 @@ export const WhyChooseSection: React.FC = () => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
         >
           {benefits.map((b, idx) => (
             <motion.div

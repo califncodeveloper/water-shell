@@ -25,7 +25,7 @@ export const CustomerSupportSection: React.FC = () => {
   };
 
   return (
-    <section id="support" className="py-20 lg:py-28 bg-brand-gray relative overflow-hidden">
+    <section id="support" className="py-16 sm:py-20 lg:py-28 bg-brand-gray relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
@@ -33,12 +33,12 @@ export const CustomerSupportSection: React.FC = () => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
-          className="text-center max-w-3xl mx-auto space-y-3 mb-16"
+          className="text-center max-w-3xl mx-auto space-y-3 mb-12 sm:mb-16"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-navy-muted text-brand-navy text-xs font-bold uppercase tracking-wider">
             Verified Contacts
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-brand-navy tracking-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-brand-navy tracking-tight">
             Customer Support & Branch Hubs
           </h2>
           <p className="text-sm sm:text-base text-slate-600">
@@ -59,7 +59,7 @@ export const CustomerSupportSection: React.FC = () => {
               key={desk.id}
               variants={fadeInUp}
               whileHover={shouldReduceMotion ? undefined : { y: -4 }}
-              className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-card hover:shadow-card-hover transition-colors flex flex-col justify-between"
+              className="bg-white rounded-3xl p-5 sm:p-8 border border-slate-200/90 shadow-card hover:shadow-card-hover transition-colors flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -72,15 +72,15 @@ export const CustomerSupportSection: React.FC = () => {
                   </div>
                 </div>
 
-                <h3 className="text-xl font-extrabold text-brand-navy mb-1">
+                <h3 className="text-lg sm:text-xl font-extrabold text-brand-navy mb-1">
                   {desk.title}
                 </h3>
                 <p className="text-xs text-slate-500 mb-4 font-medium">
                   {desk.role}
                 </p>
 
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 mb-4">
-                  <div className="text-2xl font-black text-brand-navy font-sans tracking-tight">
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 border border-slate-200/80 mb-4">
+                  <div className="text-xl sm:text-2xl font-black text-brand-navy font-sans tracking-tight">
                     {desk.phone}
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
@@ -319,7 +319,7 @@ export const CustomerSupportSection: React.FC = () => {
                       placeholder="e.g. Ramesh Kumar"
                       value={inquiryName}
                       onChange={(e) => setInquiryName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-brand-orange"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 text-sm sm:text-xs focus:outline-none focus:ring-2 focus:ring-brand-orange"
                     />
                   </div>
 
@@ -333,7 +333,7 @@ export const CustomerSupportSection: React.FC = () => {
                       placeholder="e.g. 9876543210"
                       value={inquiryPhone}
                       onChange={(e) => setInquiryPhone(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-brand-orange"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 text-sm sm:text-xs focus:outline-none focus:ring-2 focus:ring-brand-orange"
                     />
                   </div>
 
@@ -346,7 +346,7 @@ export const CustomerSupportSection: React.FC = () => {
                       placeholder="e.g. Inquiring about Aqua Touch or filter replacement"
                       value={inquiryMessage}
                       onChange={(e) => setInquiryMessage(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-brand-orange resize-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 text-sm sm:text-xs focus:outline-none focus:ring-2 focus:ring-brand-orange resize-none"
                     />
                   </div>
 
