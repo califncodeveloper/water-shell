@@ -518,8 +518,9 @@ export function OrdersPage() {
           </p>
         </div>
       ) : (
-        <div className="card table-card op-table-view">
-          <div className="table-container">
+        <>
+          <div className="card table-card op-table-view">
+            <div className="table-container">
             <table>
               <thead>
                 <tr>
@@ -686,7 +687,92 @@ export function OrdersPage() {
             </table>
           </div>
         </div>
-      )}
+
+        {/* Mobile Orders Card List (displayed on <= 768px screens) */}
+        <div className="op-card-list">
+          {filteredOrders.map((o) => {
+            const nextStatus = getNextStatus(o.orderStatus);
+            const recipient = o.shippingAddress?.fullName || o.customerEmail || o.dealerEmail || 'Customer';
+            const city = o.shippingAddress?.city || 'India';
+            const pincode = o.shippingAddress?.pincode ? ` - ${o.shippingAddress.pincode}` : '';
+            const itemsSummary =
+              o.items && o.items.length > 0
+                ? o.items.map((i) => `${i.quantity}x ${i.name}`).join(', ')
+                : '1 Item';
+
+            return (
+              <div
+                key={o.id}
+                tabIndex={0}
+                onClick={() => setSelectedOrder(o)}
+                className={`card op-order-card ${selectedOrder?.id === o.id ? 'op-order-card-selected' : ''}`}
+              >
+                <div className="op-card-top">
+                  <div>
+                    <span className="order-id-badge">{o.orderNumber || o.id.slice(0, 10)}</span>
+                    <div className="recipient-name" style={{ marginTop: 4, fontWeight: 700 }}>{recipient}</div>
+                    <div className="recipient-city">{city}{pincode}</div>
+                  </div>
+                  <div className="op-card-badges">
+                    <span className={`badge ${o.orderType === 'dealer' ? 'badge-info' : 'badge-neutral'}`}>
+                      {o.orderType === 'dealer' ? 'DEALER' : 'CUSTOMER'}
+                    </span>
+                    <span className={`badge ${getStatusBadgeClass(o.orderStatus)}`}>
+                      {(o.orderStatus || 'placed').toUpperCase()}
+                    </span>
+                    <span className={`badge ${getPaymentBadgeClass(o.paymentStatus)}`}>
+                      {o.paymentStatus === 'test_success' ? 'PAID' : (o.paymentStatus || 'PENDING').toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="op-card-items" title={itemsSummary}>
+                  {itemsSummary}
+                </div>
+
+                {o.deliveryZone && (
+                  <div>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: '#EDE9FE', color: '#6D28D9' }}>
+                      📍 {o.deliveryZone} Zone
+                    </span>
+                  </div>
+                )}
+
+                <div className="op-card-bottom">
+                  <div className="op-card-total font-sans" style={{ fontWeight: 700 }}>
+                    {formatPrice(o.total)}
+                  </div>
+                  <div>
+                    {nextStatus ? (
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm op-action-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAdvanceStatus(o.id, o.orderStatus);
+                        }}
+                      >
+                        Mark {(nextStatus || '').toUpperCase()}
+                        <ChevronRight size={14} />
+                      </button>
+                    ) : o.orderStatus === 'delivered' ? (
+                      <span className="op-completed">
+                        <CheckCircle size={14} />
+                        Delivered
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                        {(o.orderStatus || 'closed').toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </>
+    )}
 
       {/* DETAIL DRAWER */}
       {selectedOrder && (

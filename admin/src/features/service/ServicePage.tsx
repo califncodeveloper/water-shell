@@ -488,8 +488,9 @@ export function ServicePage() {
           </p>
         </div>
       ) : (
-        <div className="card table-card sp-table-view">
-          <div className="table-container">
+        <>
+          <div className="card table-card sp-table-view">
+            <div className="table-container">
             <table>
               <thead>
                 <tr>
@@ -604,7 +605,93 @@ export function ServicePage() {
             </table>
           </div>
         </div>
-      )}
+
+        {/* Mobile Service Cards List (displayed on <= 768px screens) */}
+        <div className="sp-card-list">
+          {filteredBookings.map((b) => {
+            const nextStatus = getNextStatus(b.status);
+            const name = b.address?.fullName || 'Customer';
+            const city = b.address?.city || 'India';
+            const phone = b.address?.phone || '';
+
+            return (
+              <div
+                key={b.id}
+                tabIndex={0}
+                onClick={() => handleOpenBooking(b)}
+                className={`card sp-card ${selectedBooking?.id === b.id ? 'sp-card-selected' : ''}`}
+              >
+                <div className="sp-card-top">
+                  <div>
+                    <span className="booking-id-badge">{b.id.slice(0, 10)}</span>
+                    <div className="customer-name" style={{ marginTop: 4, fontWeight: 700 }}>{name}</div>
+                    <div className="customer-city">
+                      {city} {phone ? `• ${phone}` : ''}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                    <span className={`badge ${getStatusBadgeClass(b.status)}`}>
+                      {statusLabel(b.status)}
+                    </span>
+                    <span className="badge badge-info">{typeLabel(b.serviceType)}</span>
+                  </div>
+                </div>
+
+                <div className="sp-card-slot">
+                  <CalendarClock size={16} />
+                  <div>
+                    <div style={{ fontWeight: 600, color: 'var(--color-text)' }}>
+                      {b.preferredDate || 'Flexible Date'} • {b.preferredTime || 'Anytime'}
+                    </div>
+                    <div style={{ fontSize: 11, marginTop: 2 }}>
+                      📍 {getBookingZone(b)}
+                    </div>
+                  </div>
+                </div>
+
+                {b.assignedTechnician && (
+                  <div style={{ fontSize: 11, color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <UserCheck size={12} /> Assigned: {b.assignedTechnician}
+                  </div>
+                )}
+
+                <div className="sp-card-bottom">
+                  {nextStatus ? (
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm sp-action-btn"
+                      disabled={updatingStatusId === b.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAdvanceStatus(b.id, b.status);
+                      }}
+                    >
+                      {updatingStatusId === b.id ? (
+                        <RefreshCw size={13} className="spin" />
+                      ) : (
+                        <>
+                          Mark {statusLabel(nextStatus)}
+                          <ChevronRight size={14} />
+                        </>
+                      )}
+                    </button>
+                  ) : b.status === 'completed' ? (
+                    <span className="sp-closed">
+                      <CheckCircle size={14} />
+                      Completed
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                      Closed
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </>
+    )}
 
       {/* DETAIL DRAWER */}
       {selectedBooking && (

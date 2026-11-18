@@ -471,8 +471,9 @@ export function DealersPage() {
           </p>
         </div>
       ) : (
-        <div className="card table-card op-table-view">
-          <div className="table-container">
+        <>
+          <div className="card table-card dp-table-view">
+            <div className="table-container">
             <table>
               <thead>
                 <tr>
@@ -660,7 +661,137 @@ export function DealersPage() {
             </table>
           </div>
         </div>
-      )}
+
+        {/* Mobile Customer & Dealer Cards List (displayed on <= 768px screens) */}
+        <div className="dp-card-list">
+          {filteredUsers.map((u) => {
+            const userOrders = getUserOrders(u.uid);
+            const totalSpend = getUserTotalSpend(u.uid);
+            const hasCoordinates = typeof u.latitude === 'number' && typeof u.longitude === 'number';
+            const isDealerActive = u.isActive !== false;
+
+            return (
+              <div
+                key={u.uid}
+                tabIndex={0}
+                onClick={() => handleSelectUser(u)}
+                className={`card dp-card ${selectedUser?.uid === u.uid ? 'row-selected' : ''}`}
+              >
+                <div className="dp-card-top">
+                  <div className="dp-card-title">
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>
+                      {u.shopName || u.businessName || u.displayName || 'User'}
+                    </div>
+                    {(u.shopName || u.businessName) && (
+                      <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                        <Building size={12} /> {u.shopName || u.businessName}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
+                      UID: {u.uid.slice(0, 10)}...
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                    <span
+                      className={`badge ${
+                        u.role === 'admin'
+                          ? 'badge-error'
+                          : u.role === 'dealer'
+                          ? 'badge-info'
+                          : 'badge-neutral'
+                      }`}
+                    >
+                      {(u.role || 'CUSTOMER').toUpperCase()}
+                    </span>
+                    {u.role === 'dealer' && (
+                      <span
+                        className={`badge ${
+                          u.dealerStatus === 'approved'
+                            ? 'badge-success'
+                            : u.dealerStatus === 'pending'
+                            ? 'badge-warning'
+                            : 'badge-error'
+                        }`}
+                      >
+                        {(u.dealerStatus || 'PENDING').toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="dp-card-info">
+                  <div className="dp-info-line">
+                    <Mail size={13} />
+                    <span>{u.email || 'No email registered'}</span>
+                  </div>
+                  {u.phone && (
+                    <div className="dp-info-line">
+                      <Phone size={13} />
+                      <span>{u.phone}</span>
+                    </div>
+                  )}
+                  {u.shopAddress && (
+                    <div className="dp-info-line">
+                      <span>📍 {u.shopAddress}</span>
+                    </div>
+                  )}
+                  {u.role === 'dealer' && (
+                    <div className="dp-info-line">
+                      <Navigation size={13} />
+                      <span>{hasCoordinates ? `GPS: ${u.latitude?.toFixed(3)}, ${u.longitude?.toFixed(3)}` : 'No GPS Coordinates'}</span>
+                    </div>
+                  )}
+                  <div className="dp-info-line" style={{ justifyContent: 'space-between', marginTop: 2 }}>
+                    <span>{userOrders.length} order(s) • ₹{totalSpend.toLocaleString('en-IN')} spend</span>
+                    {u.role === 'dealer' && (
+                      <span style={{ fontSize: 11, fontWeight: 600, color: isDealerActive ? '#16803D' : '#DC2626' }}>
+                        {isDealerActive ? '● Active' : '○ Deactivated'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="dp-actions" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }} onClick={(e) => e.stopPropagation()}>
+                  {u.role === 'dealer' && u.dealerStatus !== 'approved' && (
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={() => handleUpdateDealerStatus(u.uid, 'approved')}
+                      disabled={actionInProgress}
+                      style={{ padding: '6px 12px', fontSize: 12 }}
+                    >
+                      Approve
+                    </button>
+                  )}
+
+                  {u.role === 'dealer' && u.dealerStatus !== 'rejected' && (
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      style={{ background: 'rgba(180, 35, 24, 0.1)', color: '#B42318', border: 'none', padding: '6px 10px', fontSize: 12 }}
+                      onClick={() => handleUpdateDealerStatus(u.uid, 'rejected')}
+                      disabled={actionInProgress}
+                    >
+                      Reject
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => handleSelectUser(u)}
+                    style={{ padding: '6px 12px', fontSize: 12 }}
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </>
+    )}
 
       {/* USER DETAILS DRAWER */}
       {selectedUser && (

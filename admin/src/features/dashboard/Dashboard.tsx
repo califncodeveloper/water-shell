@@ -264,21 +264,9 @@ export function DashboardPage() {
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="dashboard-heading">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="dashboard-title-row">
             <h1>Live Operations Dashboard</h1>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '4px 10px',
-                borderRadius: '999px',
-                fontSize: 12,
-                fontWeight: 600,
-                background: 'rgba(22, 128, 61, 0.12)',
-                color: '#16803D',
-              }}
-            >
+            <span className="live-status-badge">
               <Radio size={12} className="spin" style={{ animationDuration: '3s' }} /> Live Firestore
             </span>
           </div>
@@ -360,23 +348,8 @@ export function DashboardPage() {
       </section>
 
       {/* Secondary KPI Bar */}
-      <section
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: 16,
-          marginBottom: 28,
-        }}
-      >
-        <div
-          className="card"
-          style={{
-            padding: 16,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
+      <section className="secondary-kpi-grid">
+        <div className="card secondary-kpi-card">
           <div>
             <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 500 }}>
               Catalog Products
@@ -400,15 +373,7 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div
-          className="card"
-          style={{
-            padding: 16,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
+        <div className="card secondary-kpi-card">
           <div>
             <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 500 }}>
               Inventory Alert
@@ -441,15 +406,7 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div
-          className="card"
-          style={{
-            padding: 16,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
+        <div className="card secondary-kpi-card">
           <div>
             <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 500 }}>
               Registered Customers
@@ -473,15 +430,7 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div
-          className="card"
-          style={{
-            padding: 16,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
+        <div className="card secondary-kpi-card">
           <div>
             <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 500 }}>
               Fulfillment Rate
@@ -511,23 +460,10 @@ export function DashboardPage() {
       </section>
 
       {/* Main Grid: Recent Orders & Action Items */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
-          gap: 24,
-        }}
-      >
+      <div className="dashboard-main-grid">
         {/* Recent Live Orders Section */}
-        <section className="card" style={{ padding: 24 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 18,
-            }}
-          >
+        <section className="card dashboard-orders-section">
+          <div className="dashboard-section-header">
             <div>
               <h2 style={{ fontSize: 18, fontWeight: 700 }}>Recent Live Orders</h2>
               <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 2 }}>
@@ -552,8 +488,8 @@ export function DashboardPage() {
               No orders placed in Firestore yet.
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table className="table" style={{ width: '100%', fontSize: 13 }}>
+            <div className="dashboard-table-container">
+              <table className="table dashboard-table">
                 <thead>
                   <tr>
                     <th>Order Ref</th>
@@ -676,9 +612,9 @@ export function DashboardPage() {
         </section>
 
         {/* Action Center Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div className="dashboard-action-column">
           {/* Dealer Approvals Card */}
-          <section className="card" style={{ padding: 20 }}>
+          <section className="card dashboard-action-card">
             <div
               style={{
                 display: 'flex',
@@ -740,7 +676,7 @@ export function DashboardPage() {
           </section>
 
           {/* Service Desk Overview */}
-          <section className="card" style={{ padding: 20 }}>
+          <section className="card dashboard-action-card">
             <div
               style={{
                 display: 'flex',
@@ -781,11 +717,11 @@ export function DashboardPage() {
           </section>
 
           {/* Quick Shortcuts */}
-          <section className="card" style={{ padding: 20 }}>
+          <section className="card dashboard-action-card">
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
               Quick Management Shortcuts
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div className="dashboard-shortcuts-grid">
               <Link
                 to="/products"
                 className="btn btn-secondary btn-sm"
